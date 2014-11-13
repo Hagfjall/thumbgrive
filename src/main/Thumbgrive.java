@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import main.GoogleApi.CodeExchangeException;
@@ -14,13 +15,13 @@ import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.FileList;
 import com.google.api.services.drive.model.ParentReference;
 
-public class GdriveThumbnails {
+public class Thumbgrive {
 
 	private GoogleCredential credentials;
 	private String[] filetypes;
 	private int thumbnailSize;
 
-	public GdriveThumbnails(int thumbnailSize, String... filetypes) {
+	public Thumbgrive(int thumbnailSize, String... filetypes) {
 		this.filetypes = filetypes;
 		this.thumbnailSize = thumbnailSize;
 		try {
@@ -63,7 +64,7 @@ public class GdriveThumbnails {
 
 	public static void main(String[] args) throws IOException {
 		// TODO read all arguments
-		GdriveThumbnails instance = new GdriveThumbnails(220, "CR2");
+		Thumbgrive instance = new Thumbgrive(220, "CR2");
 		instance.downloadThumbnails();
 	}
 
@@ -100,41 +101,57 @@ public class GdriveThumbnails {
 		} while (request.getPageToken() != null
 				&& request.getPageToken().length() > 0);
 		for (File file : result) {
-			System.out.println("id: " + file.getId());
 			System.out.println("Title: " + file.getTitle());
-			System.out.println("in folder: ");
-			ArrayList<String> parentFolders = new ArrayList<String>();
-			for (int i = 0; i < file.getParents().size(); i++) {
-				parentFolders.add(file.getParents().get(i).getId());
-			}
-			// TODO recursive way of going to the root-folder, chosing only the
-			// first way every time
-			for (String parentFolder : parentFolders) {
-				try {
-					File parentFolderFile = service.files().get(parentFolder)
-							.execute();
-					System.out.println("\t" + parentFolderFile.getTitle());
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+			System.out.println("id: " + file.getId());
+			System.out.println("subfolders: ");
+			LinkedList<String> parentFolders;
+			try {
+				parentFolders = getParentFoldersId(service, file.getId());
+				if (parentFolders.size() == 0)
+					continue;
+				for (String folder : parentFolders) {
+					System.out.print("\t");
+					printTitleOfId(service, folder);
 				}
-
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+				return;
 			}
 			System.out.println("Thmbnail: " + file.getThumbnailLink());
 		}
 	}
 
-	private List<String> getParentFolderId(Drive service, String fileId)
+	private LinkedList<String> getParentFoldersId(Drive service, String fileId)
 			throws IOException {
-		File parentFolder = service.files().get(fileId).execute();
-		for(ParentReference parent : parentFolder.getParents()) {
-			if(parent.getIsRoot()) {
-				List<String> ret = new ArrayList<String>();
-				ret.add(parent.getId());
+		LinkedList<String> ret = new LinkedList<String>();
+		String currentParentFolderId = fileId;
+		while (true) {
+			File parentFolder = service.files().get(currentParentFolderId)
+					.execute();
+			if (parentFolder.getParents().size() == 0) {
 				return ret;
+			}
+			for (ParentReference parent : parentFolder.getParents()) {
+				if (parent.getIsRoot()) {
+					ret.add(0, parent.getId());
+					return ret;
+				}
+			}
+			currentParentFolderId = parentFolder.getParents().get(0).getId();
+			ret.add(0, currentParentFolderId);
 		}
-		return null;
+	}
 
+	private void printTitleOfId(Drive service, String id) {
+		File file;
+		try {
+			file = service.files().get(id).execute();
+			System.out.println(file.getTitle());
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 }

@@ -5,4 +5,5 @@ public class Settings {
 	public static String API_SECRET = "iOL-BGbsIxFQdullQDPu654C";
 	public static String SECRET_FILE = ".secret";
 	public static String REDIRECT_URI = "urn:ietf:wg:oauth:2.0:oob";
+	public static String FILES_OUTSIDE_FOLDER_SAVE_PATH = "files-without-folder";
 }
