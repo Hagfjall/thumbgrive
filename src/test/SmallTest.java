@@ -6,8 +6,15 @@ import java.io.IOException;
 public class SmallTest {
 
 	public static void main(String[] args) {
-		// TODO Auto-generated method stub
+		pathSeparator();
 
+	}
+	static void pathSeparator() {
+		System.out.println(File.pathSeparator);
+		System.out.println(File.separator);
+	}
+	
+	static void illegalFilename() {
 		String illegalFilename = "not-allowed*^Å/";
 		File f = new File(illegalFilename);
 		try {

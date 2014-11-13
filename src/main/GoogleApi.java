@@ -334,7 +334,7 @@ public class GoogleApi {
 		HttpTransport httpTransport = new NetHttpTransport();
 		JacksonFactory jsonFactory = new JacksonFactory();
 
-		return new Drive.Builder(httpTransport, jsonFactory, credentials)
+		return new Drive.Builder(httpTransport, jsonFactory, credentials).setApplicationName("Thumbgrive")
 				.build();
 	}
 

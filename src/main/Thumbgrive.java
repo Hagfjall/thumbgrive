@@ -22,20 +22,21 @@ public class Thumbgrive {
 	private GoogleCredential credentials;
 	private String[] filetypes;
 	private int thumbnailSize;
-	
-	private Map<String,List<String>> thumbnailsLinks;
+	private Drive service;
+
+	private Map<String, List<String>> thumbnailsLinks;
 
 	public Thumbgrive(int thumbnailSize, String... filetypes) {
 		this.filetypes = filetypes;
 		this.thumbnailSize = thumbnailSize;
-		thumbnailsLinks = new HashMap<String,List<String>>();
+		thumbnailsLinks = new HashMap<String, List<String>>();
 		try {
 			credentials = loadCredentials();
+			service = GoogleApi.buildService(credentials);
 		} catch (CodeExchangeException | IOException e) {
 			e.printStackTrace();
 		}
 	}
-	
 
 	private GoogleCredential loadCredentials() throws CodeExchangeException,
 			IOException {
@@ -71,23 +72,22 @@ public class Thumbgrive {
 	public static void main(String[] args) throws IOException {
 		// TODO read all arguments
 		Thumbgrive thumbdrive = new Thumbgrive(220, "CR2");
-		thumbdrive.getThumbnailsLinks();
-		
+		thumbdrive.retrieveThumbnailsLinks();
+
 	}
 
-	private void getThumbnailsLinks() {
+	private void retrieveThumbnailsLinks() {
 		for (String filetype : filetypes) {
 			System.out.println("searching for filetypes " + filetype);
-			listFiles(filetype);
+			listFilesAddToList(filetype);
 		}
 	}
-	
+
 	private void downloadThumbnails() {
-		//TODO implement method
+		// TODO implement method
 	}
 
-	private void listFiles(String filetype) {
-		Drive service = GoogleApi.buildService(credentials); //
+	private void listFilesAddToList(String filetype) {
 		com.google.api.services.drive.Drive.Files.List request;
 		try {
 			request = service.files().list();
@@ -120,10 +120,13 @@ public class Thumbgrive {
 				parentFolders = getParentFoldersId(service, file.getId());
 				if (parentFolders.size() == 0)
 					continue;
+				StringBuilder sb = new StringBuilder(256);
 				for (String folder : parentFolders) {
-					System.out.print("\t");
-					printTitleOfId(service, folder);
+					sb.append(getTitleOfId(service, folder));
+					sb.append(java.io.File.separator);
 				}
+				System.out.println("stringbuilder: " + sb);
+				//TODO add this path and link to the map (but make it a multimap first
 			} catch (IOException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
@@ -154,15 +157,9 @@ public class Thumbgrive {
 		}
 	}
 
-	private void printTitleOfId(Drive service, String id) {
-		File file;
-		try {
-			file = service.files().get(id).execute();
-			System.out.println(file.getTitle());
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+	private String getTitleOfId(Drive service, String id) throws IOException {
+		File file = service.files().get(id).execute();
+		return file.getTitle();
 	}
 
 }
