@@ -4,8 +4,10 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import main.GoogleApi.CodeExchangeException;
 
@@ -20,16 +22,20 @@ public class Thumbgrive {
 	private GoogleCredential credentials;
 	private String[] filetypes;
 	private int thumbnailSize;
+	
+	private Map<String,List<String>> thumbnailsLinks;
 
 	public Thumbgrive(int thumbnailSize, String... filetypes) {
 		this.filetypes = filetypes;
 		this.thumbnailSize = thumbnailSize;
+		thumbnailsLinks = new HashMap<String,List<String>>();
 		try {
 			credentials = loadCredentials();
 		} catch (CodeExchangeException | IOException e) {
 			e.printStackTrace();
 		}
 	}
+	
 
 	private GoogleCredential loadCredentials() throws CodeExchangeException,
 			IOException {
@@ -64,15 +70,20 @@ public class Thumbgrive {
 
 	public static void main(String[] args) throws IOException {
 		// TODO read all arguments
-		Thumbgrive instance = new Thumbgrive(220, "CR2");
-		instance.downloadThumbnails();
+		Thumbgrive thumbdrive = new Thumbgrive(220, "CR2");
+		thumbdrive.getThumbnailsLinks();
+		
 	}
 
-	private void downloadThumbnails() {
+	private void getThumbnailsLinks() {
 		for (String filetype : filetypes) {
 			System.out.println("searching for filetypes " + filetype);
 			listFiles(filetype);
 		}
+	}
+	
+	private void downloadThumbnails() {
+		//TODO implement method
 	}
 
 	private void listFiles(String filetype) {
