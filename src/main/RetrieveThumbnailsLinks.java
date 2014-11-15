@@ -4,8 +4,10 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import main.GoogleApi.CodeExchangeException;
 
@@ -14,28 +16,34 @@ import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.FileList;
 import com.google.api.services.drive.model.ParentReference;
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.ListMultimap;
 
-public class Thumbgrive {
+public class RetrieveThumbnailsLinks {
 
 	private GoogleCredential credentials;
 	private String[] filetypes;
 	private int thumbnailSize;
 	private Drive service;
 
-	private ListMultimap<String, String> thumbnailsLinks;
+	private HashMap<String, String> thumbnailsLinks;
 
-	public Thumbgrive(int thumbnailSize, String... filetypes) {
+	public RetrieveThumbnailsLinks(int thumbnailSize, String... filetypes) {
 		this.filetypes = filetypes;
 		this.thumbnailSize = thumbnailSize;
-		thumbnailsLinks = ArrayListMultimap.create();
+		thumbnailsLinks = new HashMap<String, String>();
 		try {
 			credentials = loadCredentials();
 			service = GoogleApi.buildService(credentials);
 		} catch (CodeExchangeException | IOException e) {
 			e.printStackTrace();
 		}
+	}
+
+	public Map<String, String> getThumbnailsLinks() {
+		return thumbnailsLinks;
+	}
+
+	public void run() throws IOException {
+		retrieveThumbnailsLinks();
 	}
 
 	private GoogleCredential loadCredentials() throws CodeExchangeException,
@@ -57,7 +65,7 @@ public class Thumbgrive {
 
 	}
 
-	private void retrieveThumbnailsLinks() {
+	private void retrieveThumbnailsLinks() throws IOException {
 		for (String filetype : filetypes) {
 			System.out.println("searching for filetypes " + filetype);
 			com.google.api.services.drive.Drive.Files.List request;
@@ -88,63 +96,69 @@ public class Thumbgrive {
 					// the file aren't a image
 					continue;
 				}
-				System.out.println("Title: " + file.getTitle());
-				System.out.println("id: " + file.getId());
-				System.out.println("subfolders: ");
-				LinkedList<String> parentFolders;
-				try {
-					parentFolders = getFullPath(service, file.getId());
-					if (parentFolders.size() == 0)
-						continue;
-					StringBuilder sb = new StringBuilder(256);
-					for (String folder : parentFolders) {
-						sb.append(getTitleOfId(service, folder));
-						sb.append(java.io.File.separator);
-					}
-					System.out.println("stringbuilder: " + sb);
-					// TODO add this path and link to the map (but make it a
-					// multimap first
-				} catch (IOException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-					return;
+				System.out.println("Found\n\tTitle: " + file.getTitle());
+				System.out.println("\tid: " + file.getId());
+				List<String> fullPath;
+				fullPath = getFullPath(service, file.getId());
+				if (fullPath.size() < 2) {
+					// the file doesn't have any parent folder, is probably
+					// archived or in the "share" area, do not download the
+					// thumbnail
+					continue;
 				}
-				System.out.println("Thmbnail: " + file.getThumbnailLink());
+				String thumbnailLink = file.getThumbnailLink();
+				if (thumbnailLink.contains("=s")) {
+					int sizePos = thumbnailLink.indexOf("=s") + 2;
+					int standardThumbnailSize = Integer.parseInt(thumbnailLink
+							.substring(sizePos));
+					if (thumbnailSize != standardThumbnailSize) {
+						thumbnailLink = thumbnailLink.substring(0, sizePos)
+								+ thumbnailSize;
+					}
+				}
+				StringBuilder filePath = new StringBuilder(256);
+				//TODO the first folder is not included in the path...why?
+				for (int i = 1; i < fullPath.size(); i++) {
+					String partOfFullPath = fullPath.get(i);
+					if (i != fullPath.size() - 1)
+						partOfFullPath = Utils
+								.makeStringFilenameSafe(partOfFullPath)
+								+ java.io.File.separator;
+					filePath.append(partOfFullPath);
+				}
+				thumbnailsLinks.put(filePath.toString(), thumbnailLink);
 			}
 		}
+
 	}
 
-	private LinkedList<String> getFullPath(Drive service, String fileId)
+	private List<String> getFullPath(Drive service, String fileId)
 			throws IOException {
 		LinkedList<String> ret = new LinkedList<String>();
-		String currentParentFolderId = fileId;
-		while (true) {
-			File parentFolder = service.files().get(currentParentFolderId)
-					.execute();
-			if (parentFolder.getParents().size() == 0) {
+		String currentFileId = fileId;
+		for (int depth = 0; depth < 30; depth++) {
+			File currentFile = service.files().get(currentFileId).execute();
+			if (currentFile.getParents().size() == 0) {
 				return ret;
 			}
-			for (ParentReference parent : parentFolder.getParents()) {
+			for (ParentReference parent : currentFile.getParents()) {
 				if (parent.getIsRoot()) {
-					// ret.add(0, parent.getId());
+					String folderName = getTitleOfId(service, parent.getId());
+					ret.add(0, folderName);
 					return ret;
 				}
 			}
-			currentParentFolderId = parentFolder.getParents().get(0).getId();
-			ret.add(0, currentParentFolderId);
+			// taking the first parent
+			currentFileId = currentFile.getParents().get(0).getId();
+			ret.add(0, currentFile.getTitle());
 		}
+		throw new IOException(
+				"Depth of file exceeded 30 folders, a file's parent-loop?");
 	}
 
 	private String getTitleOfId(Drive service, String id) throws IOException {
 		File file = service.files().get(id).execute();
 		return file.getTitle();
-	}
-
-	public static void main(String[] args) throws IOException {
-		// TODO read all arguments
-		Thumbgrive thumbdrive = new Thumbgrive(600, "image/");
-		thumbdrive.retrieveThumbnailsLinks();
-
 	}
 
 }

@@ -3,11 +3,17 @@ package test;
 import java.io.File;
 import java.io.IOException;
 
+import main.Utils;
+
 public class SmallTest {
 
 	public static void main(String[] args) {
+//		stringFilenameSafe();
 		pathSeparator();
-
+	}
+	
+	static void stringFilenameSafe() {
+		System.out.println(Utils.makeStringFilenameSafe("Min enhet/C&F/Bilder/Bergen /"));
 	}
 	static void pathSeparator() {
 		System.out.println(File.pathSeparator);

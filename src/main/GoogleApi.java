@@ -115,7 +115,7 @@ public class GoogleApi {
 	 * @throws IOException
 	 */
 	public static GoogleCredential getStoredCredentialsInFile() {
-		String secretFileName = Settings.SECRET_FILE;
+		String secretFileName = Utils.SECRET_FILE;
 		List<String> lines;
 		try {
 			lines = Files.readAllLines(Paths.get("./" + secretFileName),
@@ -135,7 +135,7 @@ public class GoogleApi {
 			return null;
 		}
 		GoogleCredential credentials = new GoogleCredential.Builder()
-				.setClientSecrets(Settings.API_ID, Settings.API_SECRET)
+				.setClientSecrets(Utils.API_ID, Utils.API_SECRET)
 				.setJsonFactory(new JacksonFactory())
 				.setTransport(new NetHttpTransport()).build()
 				.setRefreshToken(refreshToken);
@@ -153,7 +153,7 @@ public class GoogleApi {
 	 */
 	private static void storeCredentials(Credential credentials)
 			throws IOException {
-		String secretFileName = Settings.SECRET_FILE;
+		String secretFileName = Utils.SECRET_FILE;
 		Path secretFile = Paths.get("./" + secretFileName);
 		Files.write(secretFile,
 				("RefreshToken:" + credentials.getRefreshToken()).getBytes());
@@ -174,7 +174,7 @@ public class GoogleApi {
 			// jsonFactory,
 			// ApiTest.class.getResourceAsStream(CLIENTSECRETS_LOCATION));
 			flow = new GoogleAuthorizationCodeFlow.Builder(httpTransport,
-					jsonFactory, Settings.API_ID, Settings.API_SECRET,
+					jsonFactory, Utils.API_ID, Utils.API_SECRET,
 					Arrays.asList(DriveScopes.DRIVE_READONLY))
 					.setAccessType("offline").setApprovalPrompt("auto").build();
 		}
@@ -201,7 +201,7 @@ public class GoogleApi {
 			Credential credential = flow.createAndStoreCredential(response,
 					null);
 			GoogleCredential credentials = new GoogleCredential.Builder()
-					.setClientSecrets(Settings.API_ID, Settings.API_SECRET)
+					.setClientSecrets(Utils.API_ID, Utils.API_SECRET)
 					.setJsonFactory(new JacksonFactory())
 					.setTransport(new NetHttpTransport()).build()
 					.setRefreshToken(credential.getRefreshToken())
