@@ -84,7 +84,7 @@ public class Thumbgrive {
 			} while (request.getPageToken() != null
 					&& request.getPageToken().length() > 0);
 			for (File file : searchResult) {
-				if (file.getThumbnailLink().equals("null")) {
+				if (file.getThumbnailLink() == null) {
 					// the file aren't a image
 					continue;
 				}
@@ -93,7 +93,7 @@ public class Thumbgrive {
 				System.out.println("subfolders: ");
 				LinkedList<String> parentFolders;
 				try {
-					parentFolders = getParentFoldersId(service, file.getId());
+					parentFolders = getFullPath(service, file.getId());
 					if (parentFolders.size() == 0)
 						continue;
 					StringBuilder sb = new StringBuilder(256);
@@ -114,11 +114,7 @@ public class Thumbgrive {
 		}
 	}
 
-	private void downloadThumbnails() {
-		// TODO implement method
-	}
-
-	private LinkedList<String> getParentFoldersId(Drive service, String fileId)
+	private LinkedList<String> getFullPath(Drive service, String fileId)
 			throws IOException {
 		LinkedList<String> ret = new LinkedList<String>();
 		String currentParentFolderId = fileId;
@@ -130,7 +126,7 @@ public class Thumbgrive {
 			}
 			for (ParentReference parent : parentFolder.getParents()) {
 				if (parent.getIsRoot()) {
-					ret.add(0, parent.getId());
+					// ret.add(0, parent.getId());
 					return ret;
 				}
 			}
