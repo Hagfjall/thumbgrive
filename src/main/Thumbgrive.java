@@ -4,10 +4,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 
 import main.GoogleApi.CodeExchangeException;
 
@@ -16,6 +14,8 @@ import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.FileList;
 import com.google.api.services.drive.model.ParentReference;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ListMultimap;
 
 public class Thumbgrive {
 
@@ -24,12 +24,12 @@ public class Thumbgrive {
 	private int thumbnailSize;
 	private Drive service;
 
-	private Map<String, List<String>> thumbnailsLinks;
+	private ListMultimap<String, String> thumbnailsLinks;
 
 	public Thumbgrive(int thumbnailSize, String... filetypes) {
 		this.filetypes = filetypes;
 		this.thumbnailSize = thumbnailSize;
-		thumbnailsLinks = new HashMap<String, List<String>>();
+		thumbnailsLinks = ArrayListMultimap.create();
 		try {
 			credentials = loadCredentials();
 			service = GoogleApi.buildService(credentials);
@@ -57,7 +57,6 @@ public class Thumbgrive {
 
 	}
 
-
 	private void retrieveThumbnailsLinks() {
 		for (String filetype : filetypes) {
 			System.out.println("searching for filetypes " + filetype);
@@ -69,14 +68,14 @@ public class Thumbgrive {
 				e1.printStackTrace();
 				return;
 			}
-			String searchQuery = "mimeType contains ";
-			request.setQ(searchQuery + "'" + filetype + "'");
-			List<File> result = new ArrayList<File>();
+			String searchQuery = "mimeType contains " + "'" + filetype + "'";
+			request.setQ(searchQuery);
+			List<File> searchResult = new ArrayList<File>();
 			do {
 				try {
 					FileList files = request.execute();
 
-					result.addAll(files.getItems());
+					searchResult.addAll(files.getItems());
 					request.setPageToken(files.getNextPageToken());
 				} catch (IOException e) {
 					System.out.println("An error occurred: " + e);
@@ -84,7 +83,11 @@ public class Thumbgrive {
 				}
 			} while (request.getPageToken() != null
 					&& request.getPageToken().length() > 0);
-			for (File file : result) {
+			for (File file : searchResult) {
+				if (file.getThumbnailLink().equals("null")) {
+					// the file aren't a image
+					continue;
+				}
 				System.out.println("Title: " + file.getTitle());
 				System.out.println("id: " + file.getId());
 				System.out.println("subfolders: ");
@@ -99,7 +102,8 @@ public class Thumbgrive {
 						sb.append(java.io.File.separator);
 					}
 					System.out.println("stringbuilder: " + sb);
-					//TODO add this path and link to the map (but make it a multimap first
+					// TODO add this path and link to the map (but make it a
+					// multimap first
 				} catch (IOException e1) {
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
@@ -139,13 +143,12 @@ public class Thumbgrive {
 		File file = service.files().get(id).execute();
 		return file.getTitle();
 	}
-	
+
 	public static void main(String[] args) throws IOException {
 		// TODO read all arguments
 		Thumbgrive thumbdrive = new Thumbgrive(600, "image/");
 		thumbdrive.retrieveThumbnailsLinks();
-		
-	}
 
+	}
 
 }
