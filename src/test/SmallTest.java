@@ -8,12 +8,12 @@ import main.Utils;
 public class SmallTest {
 
 	public static void main(String[] args) {
-//		stringFilenameSafe();
-		pathSeparator();
+		stringFilenameSafe();
+//		pathSeparator();
 	}
 	
 	static void stringFilenameSafe() {
-		System.out.println(Utils.makeStringFilenameSafe("Min enhet/C&F/Bilder/Bergen /"));
+		System.out.println(Utils.makeStringFilenameSafe("bärs^/ .2"));
 	}
 	static void pathSeparator() {
 		System.out.println(File.pathSeparator);

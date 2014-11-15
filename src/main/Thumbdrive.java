@@ -1,8 +1,7 @@
 package main;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
+import java.util.HashMap;
 
 public class Thumbdrive {
 
@@ -12,8 +11,9 @@ public class Thumbdrive {
 				600, "CR2");
 		try {
 			retrieveThumbnailsLinks.run();
-			Map<String, String> links = retrieveThumbnailsLinks
+			HashMap<String, String> links = retrieveThumbnailsLinks
 					.getThumbnailsLinks();
+			new DownloadThumbnailsExcecutor(links).start();
 			for(String path : links.keySet()) {
 				System.out.println(path + " = " + links.get(path));
 			}

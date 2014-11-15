@@ -9,6 +9,6 @@ public class Utils {
 	
 	
 	public static String makeStringFilenameSafe(String input) {
-		return input.replaceAll("\\W+", "");
+		return input.replaceAll("\\W+", "_");
 	}
 }

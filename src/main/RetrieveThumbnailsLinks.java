@@ -38,7 +38,7 @@ public class RetrieveThumbnailsLinks {
 		}
 	}
 
-	public Map<String, String> getThumbnailsLinks() {
+	public HashMap<String, String> getThumbnailsLinks() {
 		return thumbnailsLinks;
 	}
 
@@ -117,8 +117,8 @@ public class RetrieveThumbnailsLinks {
 					}
 				}
 				StringBuilder filePath = new StringBuilder(256);
-				//TODO the first folder is not included in the path...why?
-				for (int i = 1; i < fullPath.size(); i++) {
+				//TODO seems like the first folder aren't stored?
+				for (int i = 0; i < fullPath.size(); i++) {
 					String partOfFullPath = fullPath.get(i);
 					if (i != fullPath.size() - 1)
 						partOfFullPath = Utils
