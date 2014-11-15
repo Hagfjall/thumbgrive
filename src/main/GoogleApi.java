@@ -123,18 +123,14 @@ public class GoogleApi {
 		} catch (IOException e) {
 			return null;
 		}
-		String userId, refreshToken = null, accessToken = null;
+		String userId, refreshToken = null;
 		for (String line : lines) {
 			int index = line.indexOf(":") + 1;
-			if (line.startsWith("UserId:")) {
-				userId = line.substring(index);
-			} else if (line.startsWith("RefreshToken:")) {
+			if (line.startsWith("RefreshToken:")) {
 				refreshToken = line.substring(index);
-			} else if (line.startsWith("AccessToken:")) {
-				accessToken = line.substring(index);
 			}
 		}
-		if (refreshToken == null || accessToken == null) {
+		if (refreshToken == null) {
 			System.err.println("didnt find any credentials in the file...");
 			return null;
 		}
@@ -142,7 +138,7 @@ public class GoogleApi {
 				.setClientSecrets(Settings.API_ID, Settings.API_SECRET)
 				.setJsonFactory(new JacksonFactory())
 				.setTransport(new NetHttpTransport()).build()
-				.setRefreshToken(refreshToken).setAccessToken(accessToken);
+				.setRefreshToken(refreshToken);
 		return credentials;
 	}
 
@@ -155,26 +151,12 @@ public class GoogleApi {
 	 *            The OAuth 2.0 credentials to store.
 	 * @throws IOException
 	 */
-	public static void storeCredentials(Credential credentials)
+	private static void storeCredentials(Credential credentials)
 			throws IOException {
 		String secretFileName = Settings.SECRET_FILE;
 		Path secretFile = Paths.get("./" + secretFileName);
-		StringBuilder sb = new StringBuilder(200);
-		// TODO anropa getUserInfo(...); och spara till fil
-		// sb.append("UserId:");
-		// sb.append(userId);
-		// sb.append('\n');
-		sb.append("RefreshToken:");
-		sb.append(credentials.getRefreshToken());
-		sb.append('\n');
-		sb.append("AccessToken:");
-		sb.append(credentials.getAccessToken());
-		Files.write(secretFile, sb.toString().getBytes());
-		;
-		// Files.write(secretFile,
-		// ("RefreshToken:" + credentials.getRefreshToken()).getBytes());
-		// Files.write(secretFile,
-		// ("AccessToken:" + credentials.getAccessToken()).getBytes());
+		Files.write(secretFile,
+				("RefreshToken:" + credentials.getRefreshToken()).getBytes());
 	}
 
 	/**
@@ -334,8 +316,8 @@ public class GoogleApi {
 		HttpTransport httpTransport = new NetHttpTransport();
 		JacksonFactory jsonFactory = new JacksonFactory();
 
-		return new Drive.Builder(httpTransport, jsonFactory, credentials).setApplicationName("Thumbgrive")
-				.build();
+		return new Drive.Builder(httpTransport, jsonFactory, credentials)
+				.setApplicationName("Thumbgrive").build();
 	}
 
 }

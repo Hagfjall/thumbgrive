@@ -57,83 +57,61 @@ public class Thumbgrive {
 
 	}
 
-	private GoogleCredential requestUserForCredentials()
-			throws CodeExchangeException, IOException {
-		String url = GoogleApi.getAuthorizationUrl();
-		System.out.println(url);
-		System.out
-				.println("Please use this url to get the key from google and paste it here");
-		BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-		String responseCode = br.readLine();
-		br.close();
-		return GoogleApi.exchangeCodeAndStoreCredentials(responseCode);
-	}
-
-	public static void main(String[] args) throws IOException {
-		// TODO read all arguments
-		Thumbgrive thumbdrive = new Thumbgrive(220, "CR2");
-		thumbdrive.retrieveThumbnailsLinks();
-
-	}
 
 	private void retrieveThumbnailsLinks() {
 		for (String filetype : filetypes) {
 			System.out.println("searching for filetypes " + filetype);
-			listFilesAddToList(filetype);
-		}
-	}
-
-	private void downloadThumbnails() {
-		// TODO implement method
-	}
-
-	private void listFilesAddToList(String filetype) {
-		com.google.api.services.drive.Drive.Files.List request;
-		try {
-			request = service.files().list();
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-			return;
-		}
-		String searchQuery = "mimeType contains ";
-		request.setQ(searchQuery + "'" + filetype + "'");
-		List<File> result = new ArrayList<File>();
-		do {
+			com.google.api.services.drive.Drive.Files.List request;
 			try {
-				FileList files = request.execute();
-
-				result.addAll(files.getItems());
-				request.setPageToken(files.getNextPageToken());
-			} catch (IOException e) {
-				System.out.println("An error occurred: " + e);
-				request.setPageToken(null);
-			}
-		} while (request.getPageToken() != null
-				&& request.getPageToken().length() > 0);
-		for (File file : result) {
-			System.out.println("Title: " + file.getTitle());
-			System.out.println("id: " + file.getId());
-			System.out.println("subfolders: ");
-			LinkedList<String> parentFolders;
-			try {
-				parentFolders = getParentFoldersId(service, file.getId());
-				if (parentFolders.size() == 0)
-					continue;
-				StringBuilder sb = new StringBuilder(256);
-				for (String folder : parentFolders) {
-					sb.append(getTitleOfId(service, folder));
-					sb.append(java.io.File.separator);
-				}
-				System.out.println("stringbuilder: " + sb);
-				//TODO add this path and link to the map (but make it a multimap first
+				request = service.files().list();
 			} catch (IOException e1) {
 				// TODO Auto-generated catch block
 				e1.printStackTrace();
 				return;
 			}
-			System.out.println("Thmbnail: " + file.getThumbnailLink());
+			String searchQuery = "mimeType contains ";
+			request.setQ(searchQuery + "'" + filetype + "'");
+			List<File> result = new ArrayList<File>();
+			do {
+				try {
+					FileList files = request.execute();
+
+					result.addAll(files.getItems());
+					request.setPageToken(files.getNextPageToken());
+				} catch (IOException e) {
+					System.out.println("An error occurred: " + e);
+					request.setPageToken(null);
+				}
+			} while (request.getPageToken() != null
+					&& request.getPageToken().length() > 0);
+			for (File file : result) {
+				System.out.println("Title: " + file.getTitle());
+				System.out.println("id: " + file.getId());
+				System.out.println("subfolders: ");
+				LinkedList<String> parentFolders;
+				try {
+					parentFolders = getParentFoldersId(service, file.getId());
+					if (parentFolders.size() == 0)
+						continue;
+					StringBuilder sb = new StringBuilder(256);
+					for (String folder : parentFolders) {
+						sb.append(getTitleOfId(service, folder));
+						sb.append(java.io.File.separator);
+					}
+					System.out.println("stringbuilder: " + sb);
+					//TODO add this path and link to the map (but make it a multimap first
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+					return;
+				}
+				System.out.println("Thmbnail: " + file.getThumbnailLink());
+			}
 		}
+	}
+
+	private void downloadThumbnails() {
+		// TODO implement method
 	}
 
 	private LinkedList<String> getParentFoldersId(Drive service, String fileId)
@@ -161,5 +139,13 @@ public class Thumbgrive {
 		File file = service.files().get(id).execute();
 		return file.getTitle();
 	}
+	
+	public static void main(String[] args) throws IOException {
+		// TODO read all arguments
+		Thumbgrive thumbdrive = new Thumbgrive(600, "image/");
+		thumbdrive.retrieveThumbnailsLinks();
+		
+	}
+
 
 }
