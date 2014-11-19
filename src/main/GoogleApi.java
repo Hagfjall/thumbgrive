@@ -20,6 +20,9 @@ import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.DriveScopes;
 
 public class GoogleApi {
+	
+		private static final String API_ID = "712248328849-be65m63ocjt2rpctlrgcnv7c3lpr08ff.apps.googleusercontent.com";
+		private static final String API_SECRET = "iOL-BGbsIxFQdullQDPu654C";
 	// Path to client_secrets.json which should contain a JSON document such as:
 	// {
 	// "web": {
@@ -135,7 +138,7 @@ public class GoogleApi {
 			return null;
 		}
 		GoogleCredential credentials = new GoogleCredential.Builder()
-				.setClientSecrets(Utils.API_ID, Utils.API_SECRET)
+				.setClientSecrets(API_ID, API_SECRET)
 				.setJsonFactory(new JacksonFactory())
 				.setTransport(new NetHttpTransport()).build()
 				.setRefreshToken(refreshToken);
@@ -174,7 +177,7 @@ public class GoogleApi {
 			// jsonFactory,
 			// ApiTest.class.getResourceAsStream(CLIENTSECRETS_LOCATION));
 			flow = new GoogleAuthorizationCodeFlow.Builder(httpTransport,
-					jsonFactory, Utils.API_ID, Utils.API_SECRET,
+					jsonFactory, API_ID, API_SECRET,
 					Arrays.asList(DriveScopes.DRIVE_READONLY))
 					.setAccessType("offline").setApprovalPrompt("auto").build();
 		}
@@ -201,7 +204,7 @@ public class GoogleApi {
 			Credential credential = flow.createAndStoreCredential(response,
 					null);
 			GoogleCredential credentials = new GoogleCredential.Builder()
-					.setClientSecrets(Utils.API_ID, Utils.API_SECRET)
+					.setClientSecrets(API_ID, API_SECRET)
 					.setJsonFactory(new JacksonFactory())
 					.setTransport(new NetHttpTransport()).build()
 					.setRefreshToken(credential.getRefreshToken())
