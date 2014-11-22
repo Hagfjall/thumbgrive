@@ -8,7 +8,7 @@ public class Thumbdrive {
 	public static void main(String[] args) {
 		// TODO read all arguments
 		RetrieveThumbnailsLinks retrieveThumbnailsLinks = new RetrieveThumbnailsLinks(
-				600, "CR2");
+				Integer.parseInt(args[0]), args[1]);
 		try {
 			retrieveThumbnailsLinks.run();
 			HashMap<String, String> links = retrieveThumbnailsLinks

@@ -25,11 +25,15 @@ public class RetrieveThumbnailsLinks {
 	private Drive service;
 
 	private HashMap<String, String> thumbnailsLinks;
+	private HashMap<String, String> idToTitle;
+	private HashMap<String, String> fileAndParent;
 
 	public RetrieveThumbnailsLinks(int thumbnailSize, String... filetypes) {
 		this.filetypes = filetypes;
 		this.thumbnailSize = thumbnailSize;
 		thumbnailsLinks = new HashMap<String, String>();
+		idToTitle = new HashMap<String, String>();
+		fileAndParent = new HashMap<String, String>();
 		try {
 			credentials = loadCredentials();
 			service = GoogleApi.buildService(credentials);
@@ -67,8 +71,7 @@ public class RetrieveThumbnailsLinks {
 
 	private void retrieveThumbnailsLinks() throws IOException {
 		for (String filetype : filetypes) {
-			int nbrOfFilesFound;
-			System.out.println("searching for filetypes " + filetype);
+			System.out.print("searching for filetypes " + filetype + "");
 			com.google.api.services.drive.Drive.Files.List request;
 			try {
 				request = service.files().list();
@@ -86,12 +89,14 @@ public class RetrieveThumbnailsLinks {
 
 					searchResult.addAll(files.getItems());
 					request.setPageToken(files.getNextPageToken());
+					System.out.print(".");
 				} catch (IOException e) {
 					System.out.println("An error occurred: " + e);
 					request.setPageToken(null);
 				}
 			} while (request.getPageToken() != null
 					&& request.getPageToken().length() > 0);
+			System.out.println(" found " + searchResult.size() + " files");
 			for (File file : searchResult) {
 				if (file.getThumbnailLink() == null) {
 					// the file aren't a image
@@ -116,7 +121,6 @@ public class RetrieveThumbnailsLinks {
 					}
 				}
 				StringBuilder filePath = new StringBuilder(256);
-				// TODO seems like the first folder aren't stored?
 				for (int i = 0; i < fullPath.size(); i++) {
 					String partOfFullPath = fullPath.get(i);
 					if (i != fullPath.size() - 1)
@@ -125,14 +129,24 @@ public class RetrieveThumbnailsLinks {
 								+ java.io.File.separator;
 					filePath.append(partOfFullPath);
 				}
-				filePath.append(".jpg"); // the thumbnails from google-servers are always(?) in jpg
+				filePath.append(".jpg"); // the thumbnails from google-servers
+											// are always(?) in jpg
 				thumbnailsLinks.put(filePath.toString(), thumbnailLink);
 			}
-			
+
 		}
 
 	}
 
+	/**
+	 * TODO make sure to save the id's for the different folders in order to
+	 * reduce the api-calls.
+	 * 
+	 * @param service
+	 * @param fileId
+	 * @return
+	 * @throws IOException
+	 */
 	private List<String> getFullPath(Drive service, String fileId)
 			throws IOException {
 		LinkedList<String> ret = new LinkedList<String>();
@@ -140,8 +154,8 @@ public class RetrieveThumbnailsLinks {
 		for (int depth = 0; depth < 30; depth++) {
 			File currentFile = service.files().get(currentFileId).execute();
 			if (currentFile.getParents().size() == 0) {
-				System.out.println("'"
-						+ currentFile.getTitle() + "' aren't stored in any folder.");
+				System.out.println("'" + currentFile.getTitle()
+						+ "' aren't stored in any folder.");
 				return ret;
 			}
 			ret.add(0, currentFile.getTitle());
@@ -158,10 +172,19 @@ public class RetrieveThumbnailsLinks {
 		throw new IOException(
 				"Depth of file exceeded 30 folders, a file's parent-loop?");
 	}
+	
+//	private String getParentId(Drive service, String id) {
+//		
+//	}
 
 	private String getTitleOfId(Drive service, String id) throws IOException {
-		File file = service.files().get(id).execute();
-		return file.getTitle();
+		String title = idToTitle.get(id);
+		if (title == null) {
+			File file = service.files().get(id).execute();
+			title = file.getTitle();
+			idToTitle.put(id, title);
+		}
+		return title;
 	}
 
 }
