@@ -67,6 +67,7 @@ public class RetrieveThumbnailsLinks {
 
 	private void retrieveThumbnailsLinks() throws IOException {
 		for (String filetype : filetypes) {
+			int nbrOfFilesFound;
 			System.out.println("searching for filetypes " + filetype);
 			com.google.api.services.drive.Drive.Files.List request;
 			try {
@@ -126,6 +127,7 @@ public class RetrieveThumbnailsLinks {
 				}
 				thumbnailsLinks.put(filePath.toString(), thumbnailLink);
 			}
+			
 		}
 
 	}

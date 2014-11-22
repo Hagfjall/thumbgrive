@@ -13,10 +13,10 @@ public class Thumbdrive {
 			retrieveThumbnailsLinks.run();
 			HashMap<String, String> links = retrieveThumbnailsLinks
 					.getThumbnailsLinks();
-			new DownloadThumbnailsExcecutor(links).start();
 			for(String path : links.keySet()) {
 				System.out.println(path + " = " + links.get(path));
 			}
+			new DownloadThumbnailsExcecutor(links).start();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
