@@ -2,13 +2,14 @@ package main;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.util.Random;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 
 public class DownloadThumbnails implements Callable<Boolean> {
 
@@ -21,18 +22,39 @@ public class DownloadThumbnails implements Callable<Boolean> {
 		this.url = new URL(url);
 	}
 
+	public String getPath() {
+		return path;
+	}
+
 	@Override
 	public Boolean call() throws Exception {
-		File folder = new File(path.substring(0, path.lastIndexOf(File.separator)));
-		folder.mkdirs();
+		URLConnection conn = url.openConnection();
+		conn.connect();
+		File folders = new File(path.substring(0,
+				path.lastIndexOf(File.separator)));
+		folders.mkdirs();
 		File file = new File(path);
-		if(file.exists()) {
-			System.err.println("File already exists, size: " + file.length());
-//			URLConnection conn = new URLConnection();
+		long localFileSize, serverFileSize;
+		if (file.exists()) {
+			localFileSize = file.length();
+			serverFileSize = conn.getContentLengthLong();
+			if (localFileSize != serverFileSize)
+				System.err.println("'" + file
+						+ "' already exists but the size differs, local copy: "
+						+ localFileSize + " server copy: " + serverFileSize);
+			/*
+			 * check if the --force-reload flag or similar is activated and then
+			 * rewrite the file
+			 */
+			//TODO implement
+			else {
+				System.out.println("'" + file + "' already downloaded");
+			}
 			return false;
 		}
 		try (FileOutputStream fos = new FileOutputStream(path)) {
-			ReadableByteChannel rbc = Channels.newChannel(url.openStream());
+			ReadableByteChannel rbc = Channels
+					.newChannel(conn.getInputStream());
 			fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
 			System.out.println("downloaded " + path);
 			fos.close();
