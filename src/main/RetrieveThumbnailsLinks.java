@@ -152,30 +152,44 @@ public class RetrieveThumbnailsLinks {
 		LinkedList<String> ret = new LinkedList<String>();
 		String currentFileId = fileId;
 		for (int depth = 0; depth < 30; depth++) {
-			File currentFile = service.files().get(currentFileId).execute();
-			if (currentFile.getParents().size() == 0) {
-				System.out.println("'" + currentFile.getTitle()
-						+ "' aren't stored in any folder.");
+			String parentFileId = getParentId(service, currentFileId);
+			if (parentFileId == null) {
 				return ret;
 			}
-			ret.add(0, currentFile.getTitle());
-			for (ParentReference parent : currentFile.getParents()) {
-				if (parent.getIsRoot()) {
-					String folderName = getTitleOfId(service, parent.getId());
-					ret.add(0, folderName);
-					return ret;
-				}
+			ret.add(0, getTitleOfId(service, currentFileId));
+			if (parentFileId.equals("root")) {
+				System.out.println("root");
+				ret.add(0, getTitleOfId(service, parentFileId));
 			}
-			// taking the first parent
-			currentFileId = currentFile.getParents().get(0).getId();
+			currentFileId = parentFileId;
 		}
 		throw new IOException(
 				"Depth of file exceeded 30 folders, a file's parent-loop?");
 	}
-	
-//	private String getParentId(Drive service, String id) {
-//		
-//	}
+
+	private String getParentId(Drive service, String id) throws IOException {
+		String parentId = fileAndParent.get(id);
+		if (parentId == null) {
+			File currentFile = service.files().get(id).execute();
+			if (currentFile.getParents().size() == 0) {
+				return null;
+			}
+			boolean foundRoot = false;
+			for (ParentReference parent : currentFile.getParents()) {
+				if (parent.getIsRoot()) {
+					parentId = parent.getId();
+					foundRoot = true;
+					break;
+				}
+			}
+			if (!foundRoot) {
+				parentId = currentFile.getParents().get(0).getId();
+			} else {
+			}
+			fileAndParent.put(id, parentId);
+		}
+		return parentId;
+	}
 
 	private String getTitleOfId(Drive service, String id) throws IOException {
 		String title = idToTitle.get(id);
@@ -186,5 +200,19 @@ public class RetrieveThumbnailsLinks {
 		}
 		return title;
 	}
+
+//	public void printMaps() throws IOException {
+//		for (String key : idToTitle.keySet()) {
+//			System.out.println(key + " = '" + idToTitle.get(key)
+//					+ "'");
+//		}
+//		System.out.println("\tfileAndParent:");
+//		for (String key : fileAndParent.keySet()) {
+//			System.out.print(key + "\t = "
+//					+ fileAndParent.get(key));
+//			System.out.println(" ->\t" + getTitleOfId(service,key) + " = " + getTitleOfId(service, fileAndParent.get(key)));
+//		}
+//	}
+//	
 
 }
