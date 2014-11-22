@@ -80,7 +80,7 @@ public class RetrieveThumbnailsLinks {
 				e1.printStackTrace();
 				return;
 			}
-			String searchQuery = "mimeType contains " + "'" + filetype + "'";
+			String searchQuery = "mimeType contains " + "'" + filetype + "'" + " and trashed=false";
 			request.setQ(searchQuery);
 			List<File> searchResult = new ArrayList<File>();
 			do {
