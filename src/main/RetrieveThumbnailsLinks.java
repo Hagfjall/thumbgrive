@@ -125,6 +125,7 @@ public class RetrieveThumbnailsLinks {
 								+ java.io.File.separator;
 					filePath.append(partOfFullPath);
 				}
+				filePath.append(".jpg"); // the thumbnails from google-servers are always(?) in jpg
 				thumbnailsLinks.put(filePath.toString(), thumbnailLink);
 			}
 			
