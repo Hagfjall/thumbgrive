@@ -96,8 +96,6 @@ public class RetrieveThumbnailsLinks {
 					// the file aren't a image
 					continue;
 				}
-				System.out.println("Found\n\tTitle: " + file.getTitle());
-				System.out.println("\tid: " + file.getId());
 				List<String> fullPath;
 				fullPath = getFullPath(service, file.getId());
 				if (fullPath.size() < 2) {
@@ -117,7 +115,7 @@ public class RetrieveThumbnailsLinks {
 					}
 				}
 				StringBuilder filePath = new StringBuilder(256);
-				//TODO seems like the first folder aren't stored?
+				// TODO seems like the first folder aren't stored?
 				for (int i = 0; i < fullPath.size(); i++) {
 					String partOfFullPath = fullPath.get(i);
 					if (i != fullPath.size() - 1)
@@ -139,8 +137,11 @@ public class RetrieveThumbnailsLinks {
 		for (int depth = 0; depth < 30; depth++) {
 			File currentFile = service.files().get(currentFileId).execute();
 			if (currentFile.getParents().size() == 0) {
+				System.out.println("'"
+						+ currentFile.getTitle() + "' aren't stored in any folder.");
 				return ret;
 			}
+			ret.add(0, currentFile.getTitle());
 			for (ParentReference parent : currentFile.getParents()) {
 				if (parent.getIsRoot()) {
 					String folderName = getTitleOfId(service, parent.getId());
@@ -150,7 +151,6 @@ public class RetrieveThumbnailsLinks {
 			}
 			// taking the first parent
 			currentFileId = currentFile.getParents().get(0).getId();
-			ret.add(0, currentFile.getTitle());
 		}
 		throw new IOException(
 				"Depth of file exceeded 30 folders, a file's parent-loop?");
