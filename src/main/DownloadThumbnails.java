@@ -38,19 +38,25 @@ public class DownloadThumbnails implements Callable<Boolean> {
 		if (file.exists()) {
 			localFileSize = file.length();
 			serverFileSize = conn.getContentLengthLong();
-			if (localFileSize != serverFileSize)
-				System.err.println("'" + file
-						+ "' already exists but the size differs, local copy: "
-						+ localFileSize + " server copy: " + serverFileSize);
+			if (localFileSize != serverFileSize) {
+				if (!Utils.FORCE_RELOAD) {
+					System.err
+							.println("'"
+									+ file
+									+ "' already exists but the size differs, local copy: "
+									+ localFileSize + " server copy: "
+									+ serverFileSize);
+				}
+			}
 			/*
 			 * check if the --force-reload flag or similar is activated and then
 			 * rewrite the file
 			 */
-			//TODO implement
+			// TODO implement
 			else {
 				System.out.println("'" + file + "' already downloaded");
+				return false;
 			}
-			return false;
 		}
 		try (FileOutputStream fos = new FileOutputStream(path)) {
 			ReadableByteChannel rbc = Channels

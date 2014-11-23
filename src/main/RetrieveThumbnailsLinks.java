@@ -46,7 +46,7 @@ public class RetrieveThumbnailsLinks {
 		return thumbnailsLinks;
 	}
 
-	public void run() throws IOException {
+	public void run()  {
 		retrieveThumbnailsLinks();
 	}
 
@@ -69,7 +69,7 @@ public class RetrieveThumbnailsLinks {
 
 	}
 
-	private void retrieveThumbnailsLinks() throws IOException {
+	private void retrieveThumbnailsLinks() {
 		for (String filetype : filetypes) {
 			System.out.print("searching for filetypes " + filetype + "");
 			com.google.api.services.drive.Drive.Files.List request;
@@ -80,7 +80,8 @@ public class RetrieveThumbnailsLinks {
 				e1.printStackTrace();
 				return;
 			}
-			String searchQuery = "mimeType contains " + "'" + filetype + "'" + " and trashed=false";
+			String searchQuery = "mimeType contains " + "'" + filetype + "'"
+					+ " and trashed=false";
 			request.setQ(searchQuery);
 			List<File> searchResult = new ArrayList<File>();
 			do {
@@ -103,7 +104,17 @@ public class RetrieveThumbnailsLinks {
 					continue;
 				}
 				List<String> fullPath;
-				fullPath = getFullPath(service, file.getId());
+				try {
+					fullPath = getFullPath(service, file.getId());
+				} catch (IOException e) {
+					System.err
+							.println("Could not get information about the file '"
+									+ file.getTitle()
+									+ "'"
+									+ " errormsg: "
+									+ e.getMessage());
+					continue;
+				}
 				if (fullPath.size() < 2) {
 					// the file doesn't have any parent folder, is probably
 					// archived or in the "share" area, do not download the
@@ -111,7 +122,7 @@ public class RetrieveThumbnailsLinks {
 					continue;
 				}
 				String thumbnailLink = file.getThumbnailLink();
-				if (thumbnailLink.contains("=s")) {
+				if (thumbnailLink != null && thumbnailLink.contains("=s")) {
 					int sizePos = thumbnailLink.indexOf("=s") + 2;
 					int standardThumbnailSize = Integer.parseInt(thumbnailLink
 							.substring(sizePos));
@@ -129,24 +140,14 @@ public class RetrieveThumbnailsLinks {
 								+ java.io.File.separator;
 					filePath.append(partOfFullPath);
 				}
-				filePath.append(".jpg"); // the thumbnails from google-servers
+				filePath.append(".jpg"); //TODO the thumbnails from google-servers
 											// are always(?) in jpg
 				thumbnailsLinks.put(filePath.toString(), thumbnailLink);
 			}
-
 		}
 
 	}
 
-	/**
-	 * TODO make sure to save the id's for the different folders in order to
-	 * reduce the api-calls.
-	 * 
-	 * @param service
-	 * @param fileId
-	 * @return
-	 * @throws IOException
-	 */
 	private List<String> getFullPath(Drive service, String fileId)
 			throws IOException {
 		LinkedList<String> ret = new LinkedList<String>();
@@ -201,18 +202,19 @@ public class RetrieveThumbnailsLinks {
 		return title;
 	}
 
-//	public void printMaps() throws IOException {
-//		for (String key : idToTitle.keySet()) {
-//			System.out.println(key + " = '" + idToTitle.get(key)
-//					+ "'");
-//		}
-//		System.out.println("\tfileAndParent:");
-//		for (String key : fileAndParent.keySet()) {
-//			System.out.print(key + "\t = "
-//					+ fileAndParent.get(key));
-//			System.out.println(" ->\t" + getTitleOfId(service,key) + " = " + getTitleOfId(service, fileAndParent.get(key)));
-//		}
-//	}
-//	
+	// public void printMaps() throws IOException {
+	// for (String key : idToTitle.keySet()) {
+	// System.out.println(key + " = '" + idToTitle.get(key)
+	// + "'");
+	// }
+	// System.out.println("\tfileAndParent:");
+	// for (String key : fileAndParent.keySet()) {
+	// System.out.print(key + "\t = "
+	// + fileAndParent.get(key));
+	// System.out.println(" ->\t" + getTitleOfId(service,key) + " = " +
+	// getTitleOfId(service, fileAndParent.get(key)));
+	// }
+	// }
+	//
 
 }
