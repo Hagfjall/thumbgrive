@@ -6,7 +6,7 @@ public class Utils {
 	public static String SECRET_FILE = ".secret";
 	public static String REDIRECT_URI = "urn:ietf:wg:oauth:2.0:oob";
 	public static String FILES_OUTSIDE_FOLDER_SAVE_PATH = "files-without-folder";
-	public static String CURRENT_STATE_FILE_NAME = ".currentRecievedLinks";
+	public static String CURRENT_STATE_FILE_NAME = ".hashmapRetrievedLinks";
 	
 	public static boolean FORCE_RELOAD = false;
 	
