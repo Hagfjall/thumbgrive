@@ -1,13 +1,16 @@
 package main;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
+import java.util.logging.Logger;
 
 import main.GoogleApi.CodeExchangeException;
 
@@ -19,6 +22,8 @@ import com.google.api.services.drive.model.ParentReference;
 
 public class RetrieveThumbnailsLinks {
 
+	private final static Logger LOGGER = Logger
+			.getLogger(RetrieveThumbnailsLinks.class.getName());
 	private GoogleCredential credentials;
 	private String[] filetypes;
 	private int thumbnailSize;
@@ -46,7 +51,7 @@ public class RetrieveThumbnailsLinks {
 		return thumbnailsLinks;
 	}
 
-	public void run()  {
+	public void run() {
 		retrieveThumbnailsLinks();
 	}
 
@@ -71,7 +76,8 @@ public class RetrieveThumbnailsLinks {
 
 	private void retrieveThumbnailsLinks() {
 		for (String filetype : filetypes) {
-			System.out.print("searching for filetypes " + filetype + "");
+			LOGGER.info("searching for filetypes " + filetype + "");
+			System.out.println("searching for filetypes " + filetype + "");
 			com.google.api.services.drive.Drive.Files.List request;
 			try {
 				request = service.files().list();
@@ -92,33 +98,43 @@ public class RetrieveThumbnailsLinks {
 					request.setPageToken(files.getNextPageToken());
 					System.out.print(".");
 				} catch (IOException e) {
-					System.out.println("An error occurred: " + e);
+					LOGGER.warning("An error occurred during the search-query, msg: "
+							+ e.toString());
 					request.setPageToken(null);
 				}
 			} while (request.getPageToken() != null
 					&& request.getPageToken().length() > 0);
-			System.out.println(" found " + searchResult.size() + " files");
+			LOGGER.info(" found " + searchResult.size() + " files");
+
+			int linkCounter = 0;
 			for (File file : searchResult) {
+				linkCounter++;
+				if (linkCounter % 20 == 0) {
+					saveStateToFile();
+				}
 				if (file.getThumbnailLink() == null) {
 					// the file aren't a image
+					LOGGER.fine("'"
+							+ file.getTitle()
+							+ "' doesn't have a thumbnail-link. Could be because google hasn't made one yet or the file isn't an image");
 					continue;
 				}
 				List<String> fullPath;
 				try {
 					fullPath = getFullPath(service, file.getId());
 				} catch (IOException e) {
-					System.err
-							.println("Could not get information about the file '"
-									+ file.getTitle()
-									+ "'"
-									+ " errormsg: "
-									+ e.getMessage());
+					LOGGER.warning("Could not get information about the file '"
+							+ file.getTitle() + "'" + " errormsg: "
+							+ e.getMessage());
 					continue;
 				}
 				if (fullPath.size() < 2) {
 					// the file doesn't have any parent folder, is probably
 					// archived or in the "share" area, do not download the
 					// thumbnail
+					LOGGER.fine("'"
+							+ file.getTitle()
+							+ "' does not have a parent folder, it is probably archived, will not be downloaded");
 					continue;
 				}
 				String thumbnailLink = file.getThumbnailLink();
@@ -130,6 +146,11 @@ public class RetrieveThumbnailsLinks {
 						thumbnailLink = thumbnailLink.substring(0, sizePos)
 								+ thumbnailSize;
 					}
+				} else {
+					LOGGER.fine("Could not change the size on the thumbnail for '"
+							+ file.getTitle()
+							+ "' , thumbnail-link: "
+							+ thumbnailLink);
 				}
 				StringBuilder filePath = new StringBuilder(256);
 				for (int i = 0; i < fullPath.size(); i++) {
@@ -140,12 +161,15 @@ public class RetrieveThumbnailsLinks {
 								+ java.io.File.separator;
 					filePath.append(partOfFullPath);
 				}
-				filePath.append(".jpg"); //TODO the thumbnails from google-servers
+				filePath.append(".jpg"); // TODO the thumbnails from
+											// google-servers
 											// are always(?) in jpg
-				thumbnailsLinks.put(filePath.toString(), thumbnailLink);
+				thumbnailsLinks.put(thumbnailLink, filePath.toString());
 			}
 		}
-
+		java.io.File currentStateLinks = new java.io.File(
+				Utils.CURRENT_STATE_FILE_NAME);
+		currentStateLinks.delete();
 	}
 
 	private List<String> getFullPath(Drive service, String fileId)
@@ -155,19 +179,24 @@ public class RetrieveThumbnailsLinks {
 		for (int depth = 0; depth < 30; depth++) {
 			String parentFileId = getParentId(service, currentFileId);
 			if (parentFileId == null) {
+				LOGGER.finest("'" + getTitleOfId(service, currentFileId)
+						+ "' gets null for it parent;");
 				return ret;
 			}
 			ret.add(0, getTitleOfId(service, currentFileId));
-			if (parentFileId.equals("root")) {
-				System.out.println("root");
-				ret.add(0, getTitleOfId(service, parentFileId));
-			}
 			currentFileId = parentFileId;
 		}
 		throw new IOException(
 				"Depth of file exceeded 30 folders, a file's parent-loop?");
 	}
 
+	/**
+	 * 
+	 * @param service
+	 * @param id
+	 * @return the parent id or null if there
+	 * @throws IOException
+	 */
 	private String getParentId(Drive service, String id) throws IOException {
 		String parentId = fileAndParent.get(id);
 		if (parentId == null) {
@@ -186,6 +215,7 @@ public class RetrieveThumbnailsLinks {
 			if (!foundRoot) {
 				parentId = currentFile.getParents().get(0).getId();
 			} else {
+				// return null; //TODO check if this is correct next time online
 			}
 			fileAndParent.put(id, parentId);
 		}
@@ -217,4 +247,14 @@ public class RetrieveThumbnailsLinks {
 	// }
 	//
 
+	private void saveStateToFile() {
+		LOGGER.finer("saving recieved links so far to file");
+		try (ObjectOutputStream oos = new ObjectOutputStream(
+				new FileOutputStream(Utils.CURRENT_STATE_FILE_NAME))) {
+			oos.writeObject(thumbnailsLinks);
+		} catch (IOException e) {
+			LOGGER.finer("Could not save current state, reason: "
+					+ e.toString());
+		}
+	}
 }

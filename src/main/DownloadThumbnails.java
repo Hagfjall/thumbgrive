@@ -7,19 +7,20 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
-import java.util.Random;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
+import java.util.logging.Logger;
 
 public class DownloadThumbnails implements Callable<Boolean> {
+	private final static Logger LOGGER = Logger
+			.getLogger(DownloadThumbnails.class.getName());
 
 	private String path;
 	private URL url;
 
-	public DownloadThumbnails(String path, String url)
+	public DownloadThumbnails(String link, String path)
 			throws MalformedURLException {
 		this.path = path;
-		this.url = new URL(url);
+		url = new URL(link);
 	}
 
 	public String getPath() {
@@ -40,12 +41,10 @@ public class DownloadThumbnails implements Callable<Boolean> {
 			serverFileSize = conn.getContentLengthLong();
 			if (localFileSize != serverFileSize) {
 				if (!Utils.FORCE_RELOAD) {
-					System.err
-							.println("'"
-									+ file
-									+ "' already exists but the size differs, local copy: "
-									+ localFileSize + " server copy: "
-									+ serverFileSize);
+					LOGGER.warning("'"
+							+ file
+							+ "' already exists but the size differs, local copy: "
+							+ localFileSize + " server copy: " + serverFileSize);
 				}
 			}
 			/*
@@ -54,7 +53,7 @@ public class DownloadThumbnails implements Callable<Boolean> {
 			 */
 			// TODO implement
 			else {
-				System.out.println("'" + file + "' already downloaded");
+				LOGGER.info("'" + file + "' already downloaded");
 				return false;
 			}
 		}
@@ -62,7 +61,7 @@ public class DownloadThumbnails implements Callable<Boolean> {
 			ReadableByteChannel rbc = Channels
 					.newChannel(conn.getInputStream());
 			fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-			System.out.println("downloaded " + path);
+			LOGGER.info("'" + path + "' downloaded");
 			fos.close();
 			rbc.close();
 			return true;

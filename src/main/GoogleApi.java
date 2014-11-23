@@ -20,18 +20,9 @@ import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.DriveScopes;
 
 public class GoogleApi {
-	
-		private static final String API_ID = "712248328849-be65m63ocjt2rpctlrgcnv7c3lpr08ff.apps.googleusercontent.com";
-		private static final String API_SECRET = "iOL-BGbsIxFQdullQDPu654C";
-	// Path to client_secrets.json which should contain a JSON document such as:
-	// {
-	// "web": {
-	// "client_id": "[[YOUR_CLIENT_ID]]",
-	// "client_secret": "[[YOUR_CLIENT_SECRET]]",
-	// "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-	// "token_uri": "https://accounts.google.com/o/oauth2/token"
-	// }
-	// }
+
+	private static final String API_ID = "712248328849-be65m63ocjt2rpctlrgcnv7c3lpr08ff.apps.googleusercontent.com";
+	private static final String API_SECRET = "iOL-BGbsIxFQdullQDPu654C";
 
 	private static final String REDIRECT_URI = "urn:ietf:wg:oauth:2.0:oob";
 
@@ -42,6 +33,7 @@ public class GoogleApi {
 	 */
 	public static class GetCredentialsException extends Exception {
 
+		private static final long serialVersionUID = 733670638248314936L;
 		protected String authorizationUrl;
 
 		/**
@@ -75,6 +67,11 @@ public class GoogleApi {
 	public static class CodeExchangeException extends GetCredentialsException {
 
 		/**
+		 * 
+		 */
+		private static final long serialVersionUID = -5033165528913578704L;
+
+		/**
 		 * Construct a CodeExchangeException.
 		 *
 		 * @param authorizationUrl
@@ -92,6 +89,11 @@ public class GoogleApi {
 	public static class NoRefreshTokenException extends GetCredentialsException {
 
 		/**
+		 * 
+		 */
+		private static final long serialVersionUID = -6598528379056777222L;
+
+		/**
 		 * Construct a NoRefreshTokenException.
 		 *
 		 * @param authorizationUrl
@@ -101,12 +103,6 @@ public class GoogleApi {
 			super(authorizationUrl);
 		}
 
-	}
-
-	/**
-	 * Exception thrown when no user ID could be retrieved.
-	 */
-	private static class NoUserIdException extends Exception {
 	}
 
 	/**
@@ -285,35 +281,36 @@ public class GoogleApi {
 	 * @throws IOException
 	 *             Unable to load client_secrets.json.
 	 */
-	public static Credential getCredentials(String authorizationCode)
-			throws CodeExchangeException, NoRefreshTokenException, IOException {
-		try {
-			Credential credentials = exchangeCodeAndStoreCredentials(authorizationCode);
-			if (credentials.getRefreshToken() != null) {
-				storeCredentials(credentials);
-				return credentials;
-			} else {
-				credentials = getStoredCredentialsInFile();
-				if (credentials != null
-						&& credentials.getRefreshToken() != null) {
-					return credentials;
-				} else {
-					System.err.println("null in the refreshtoken...?!");
-				}
-			}
-		} catch (CodeExchangeException e) {
-			e.printStackTrace();
-			// Drive apps should try to retrieve the user and credentials for
-			// the current
-			// session.
-			// If none is available, redirect the user to the authorization URL.
-			e.setAuthorizationUrl(getAuthorizationUrl());
-			throw e;
-		}
-		// No refresh token has been retrieved.
-		String authorizationUrl = getAuthorizationUrl();
-		throw new NoRefreshTokenException(authorizationUrl);
-	}
+	//TODO can this be removed?
+//	public static Credential getCredentials(String authorizationCode)
+//			throws CodeExchangeException, NoRefreshTokenException, IOException {
+//		try {
+//			Credential credentials = exchangeCodeAndStoreCredentials(authorizationCode);
+//			if (credentials.getRefreshToken() != null) {
+//				storeCredentials(credentials);
+//				return credentials;
+//			} else {
+//				credentials = getStoredCredentialsInFile();
+//				if (credentials != null
+//						&& credentials.getRefreshToken() != null) {
+//					return credentials;
+//				} else {
+//					System.err.println("null in the refreshtoken...?!");
+//				}
+//			}
+//		} catch (CodeExchangeException e) {
+//			e.printStackTrace();
+//			// Drive apps should try to retrieve the user and credentials for
+//			// the current
+//			// session.
+//			// If none is available, redirect the user to the authorization URL.
+//			e.setAuthorizationUrl(getAuthorizationUrl());
+//			throw e;
+//		}
+//		// No refresh token has been retrieved.
+//		String authorizationUrl = getAuthorizationUrl();
+//		throw new NoRefreshTokenException(authorizationUrl);
+//	}
 
 	public static Drive buildService(GoogleCredential credentials) {
 		HttpTransport httpTransport = new NetHttpTransport();
