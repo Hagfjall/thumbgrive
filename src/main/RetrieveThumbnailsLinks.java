@@ -1,15 +1,18 @@
 package main;
 
 import java.io.BufferedReader;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import main.GoogleApi.CodeExchangeException;
@@ -26,17 +29,25 @@ public class RetrieveThumbnailsLinks {
 			.getLogger(RetrieveThumbnailsLinks.class.getName());
 	private GoogleCredential credentials;
 	private String[] filetypes;
-	private int thumbnailSize;
 	private Drive service;
 
 	private HashMap<String, String> thumbnailsLinks;
+	private HashMap<String, String> fileIdThumbnails; // TODO save all the fetched links to this map and save preriod. to disk
 	private HashMap<String, String> idToTitle;
 	private HashMap<String, String> fileAndParent;
 
 	public RetrieveThumbnailsLinks(int thumbnailSize, String... filetypes) {
+		LOGGER.setLevel(Level.ALL);
 		this.filetypes = filetypes;
-		this.thumbnailSize = thumbnailSize;
-		thumbnailsLinks = new HashMap<String, String>();
+		Utils.THUMBNAIL_SIZE = thumbnailSize;
+		thumbnailsLinks = loadSavedState();
+		if (thumbnailsLinks == null) {
+			thumbnailsLinks = new HashMap<String, String>();
+			LOGGER.finer(Utils.CURRENT_STATE_FILE_NAME + " not loaded...");
+		} else {
+			LOGGER.finer(Utils.CURRENT_STATE_FILE_NAME + " loaded with "
+					+ thumbnailsLinks.size() + " links");
+		}
 		idToTitle = new HashMap<String, String>();
 		fileAndParent = new HashMap<String, String>();
 		try {
@@ -44,6 +55,18 @@ public class RetrieveThumbnailsLinks {
 			service = GoogleApi.buildService(credentials);
 		} catch (CodeExchangeException | IOException e) {
 			e.printStackTrace();
+		}
+	}
+
+	private HashMap<String, String> loadSavedState() {
+		try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(
+				Utils.CURRENT_STATE_FILE_NAME))) {
+			HashMap<String, String> thumbnailLinks = (HashMap<String, String>) ois
+					.readObject();
+			return thumbnailLinks;
+		} catch (IOException | ClassNotFoundException e) {
+			LOGGER.warning("Could not load previous state, " + e.toString());
+			return null;
 		}
 	}
 
@@ -119,6 +142,12 @@ public class RetrieveThumbnailsLinks {
 							+ "' doesn't have a thumbnail-link. Could be because google hasn't made one yet or the file isn't an image");
 					continue;
 				}
+				String thumbnailLink = file.getThumbnailLink();
+				thumbnailLink = Utils.removeSizeOfThumbnailPref(thumbnailLink);
+				if (thumbnailsLinks.get(thumbnailLink) != null) {
+					LOGGER.finer("already got the thumbnail-link for '" + file.getTitle() + "'");
+					
+				}
 				List<String> fullPath;
 				try {
 					fullPath = getFullPath(service, file.getId());
@@ -137,21 +166,7 @@ public class RetrieveThumbnailsLinks {
 							+ "' does not have a parent folder, it is probably archived, will not be downloaded");
 					continue;
 				}
-				String thumbnailLink = file.getThumbnailLink();
-				if (thumbnailLink != null && thumbnailLink.contains("=s")) {
-					int sizePos = thumbnailLink.indexOf("=s") + 2;
-					int standardThumbnailSize = Integer.parseInt(thumbnailLink
-							.substring(sizePos));
-					if (thumbnailSize != standardThumbnailSize) {
-						thumbnailLink = thumbnailLink.substring(0, sizePos)
-								+ thumbnailSize;
-					}
-				} else {
-					LOGGER.fine("Could not change the size on the thumbnail for '"
-							+ file.getTitle()
-							+ "' , thumbnail-link: "
-							+ thumbnailLink);
-				}
+				
 				StringBuilder filePath = new StringBuilder(256);
 				for (int i = 0; i < fullPath.size(); i++) {
 					String partOfFullPath = fullPath.get(i);
@@ -166,10 +181,9 @@ public class RetrieveThumbnailsLinks {
 											// are always(?) in jpg
 				thumbnailsLinks.put(thumbnailLink, filePath.toString());
 			}
+			saveStateToFile();
 		}
-		java.io.File currentStateLinks = new java.io.File(
-				Utils.CURRENT_STATE_FILE_NAME);
-		currentStateLinks.delete();
+
 	}
 
 	private List<String> getFullPath(Drive service, String fileId)
@@ -232,20 +246,22 @@ public class RetrieveThumbnailsLinks {
 		return title;
 	}
 
-	// public void printMaps() throws IOException {
-	// for (String key : idToTitle.keySet()) {
-	// System.out.println(key + " = '" + idToTitle.get(key)
-	// + "'");
-	// }
-	// System.out.println("\tfileAndParent:");
-	// for (String key : fileAndParent.keySet()) {
-	// System.out.print(key + "\t = "
-	// + fileAndParent.get(key));
-	// System.out.println(" ->\t" + getTitleOfId(service,key) + " = " +
-	// getTitleOfId(service, fileAndParent.get(key)));
-	// }
-	// }
-	//
+	public void printMaps() throws IOException {
+		System.out.println("\tIdToTitle:");
+		for (String key : idToTitle.keySet()) {
+			System.out.println(key + " = '" + idToTitle.get(key) + "'");
+		}
+		System.out.println("\tfileAndParent:");
+		for (String key : fileAndParent.keySet()) {
+			System.out.print(key + "\t = " + fileAndParent.get(key));
+			System.out.println(" ->\t" + getTitleOfId(service, key) + " = "
+					+ getTitleOfId(service, fileAndParent.get(key)));
+		}
+		System.out.println("\tThumbnailLinks");
+		for(String key : thumbnailsLinks.keySet()) {
+			System.out.println(key + "\t = " + thumbnailsLinks.get(key));
+		}
+	}
 
 	private void saveStateToFile() {
 		LOGGER.finer("saving recieved links so far to file");
