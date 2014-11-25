@@ -133,7 +133,7 @@ public class RetrieveThumbnailsLinks {
 				continue;
 			}
 			String thumbnailLink = file.getThumbnailLink();
-			thumbnailLink = Utils.removeSizeOfThumbnailPref(thumbnailLink);
+//			thumbnailLink = Utils.removeSizeOfThumbnailPref(thumbnailLink);
 			if (fileIdThumbnails.get(file.getId()) != null) {
 				LOGGER.finer("already got the thumbnail-link for '"
 						+ file.getTitle() + "'");
@@ -143,20 +143,19 @@ public class RetrieveThumbnailsLinks {
 			try {
 				fullPath = getFullPath(service, file.getId());
 			} catch (IOException e) {
-				LOGGER.warning("Could not get information about the file '"
-						+ file.getTitle() + "'" + " errormsg: "
-						+ e.getMessage());
+				LOGGER.warning("Did not get the full path of the file '"
+						+ file.getTitle() + "'" + " reason: " + e.getMessage());
 				continue;
 			}
-			if (fullPath.size() < 2) {
-				// the file doesn't have any parent folder, is probably
-				// archived or in the "share" area, do not download the
-				// thumbnail
-				LOGGER.fine("'"
-						+ file.getTitle()
-						+ "' does not have a parent folder, it is probably archived, will not be downloaded");
-				continue;
-			}
+//			if (fullPath.size() < 1) {
+//				// the file doesn't have any parent folder, is probably
+//				// archived or in the "share" area, do not download the
+//				// thumbnail
+//				LOGGER.fine("'"
+//						+ file.getTitle()
+//						+ "' does not have a parent folder, it is probably archived, will not be downloaded");
+//				continue;
+//			}
 
 			StringBuilder filePath = new StringBuilder(256);
 			for (int i = 0; i < fullPath.size(); i++) {
@@ -173,7 +172,7 @@ public class RetrieveThumbnailsLinks {
 			fileIdThumbnails.put(file.getId(),
 					new ThumbnailPath(filePath.toString(), thumbnailLink));
 		}
-		fileCounter=-1;
+		fileCounter = -1;
 		saveStateToFile();
 	}
 
@@ -186,6 +185,10 @@ public class RetrieveThumbnailsLinks {
 			if (parentFileId == null) {
 				LOGGER.finest("'" + getTitleOfId(service, currentFileId)
 						+ "' gets null for it parent;");
+				return ret;
+			}
+			if (parentFileId.equals("ROOT_FOLDER")) {
+				ret.add(0, getTitleOfId(service, currentFileId));
 				return ret;
 			}
 			ret.add(0, getTitleOfId(service, currentFileId));
@@ -207,7 +210,10 @@ public class RetrieveThumbnailsLinks {
 		if (parentId == null) {
 			File currentFile = service.files().get(id).execute();
 			if (currentFile.getParents().size() == 0) {
-				return null;
+				// ParentReference currentFile2 =
+				// fileAndParent.put(currentFile.getId(), "ROOT_FOLDER");
+				throw new IOException("'" + currentFile.getTitle()
+						+ "' doesn't have any parent, archived?");
 			}
 			boolean foundRoot = false;
 			for (ParentReference parent : currentFile.getParents()) {
@@ -220,7 +226,10 @@ public class RetrieveThumbnailsLinks {
 			if (!foundRoot) {
 				parentId = currentFile.getParents().get(0).getId();
 			} else {
-				// return null; //TODO check if this is correct next time online
+				// parentId =
+				// fileAndParent.put(id, parentId);
+				// return null;
+				return "ROOT_FOLDER";
 			}
 			fileAndParent.put(id, parentId);
 		}
@@ -274,6 +283,8 @@ public class RetrieveThumbnailsLinks {
 			System.out.println("searching for filetypes " + filetype + "");
 			String searchQuery = "mimeType contains " + "'" + filetype + "'"
 					+ " and trashed=false";
+			// TODO add this to query (and make it work) ->
+			// "'root' in parents and " +
 			try {
 				List<File> searchResult = searchResult(searchQuery);
 				buildFolderTree(searchResult);

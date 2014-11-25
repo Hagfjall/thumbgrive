@@ -16,16 +16,27 @@ public class Utils {
 		return input.replaceAll("\\W+", "_");
 	}
 
-	public static String addSizeOfThumbnailPref(String thumbnailLink) {
-		if (thumbnailLink != null) {
-			return thumbnailLink + "=s" + THUMBNAIL_SIZE;
+//	public static String addSizeOfThumbnailPref(String thumbnailLink) {
+//		if (thumbnailLink != null) {
+//			return thumbnailLink + "=s" + THUMBNAIL_SIZE;
+//		} else {
+//			return null;
+//		}
+//	}
+//
+//	public static String removeSizeOfThumbnailPref(String thumbnailLink) {
+//		int sizePos = thumbnailLink.indexOf("=s");
+//		return thumbnailLink.substring(0, sizePos);
+//	}
+
+	public static String changeSizeOfThumbnailToPref(String thumbnailLink) {
+		if (thumbnailLink != null && thumbnailLink.contains("=s")) {
+			int sizePos = thumbnailLink.indexOf("=s") + 2;
+			int currentThumbnailSize = Integer.parseInt(thumbnailLink
+					.substring(sizePos));
+			return thumbnailLink.substring(0, sizePos) + THUMBNAIL_SIZE;
 		} else {
 			return null;
 		}
-	}
-
-	public static String removeSizeOfThumbnailPref(String thumbnailLink) {
-		int sizePos = thumbnailLink.indexOf("=s");
-		return thumbnailLink.substring(0, sizePos);
 	}
 }

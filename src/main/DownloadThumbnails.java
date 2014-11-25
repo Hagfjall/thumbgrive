@@ -31,9 +31,12 @@ public class DownloadThumbnails implements Callable<Boolean> {
 	public Boolean call() throws Exception {
 		URLConnection conn = url.openConnection();
 		conn.connect();
-		File folders = new File(path.substring(0,
-				path.lastIndexOf(File.separator)));
-		folders.mkdirs();
+		int folderIndex = path.lastIndexOf(File.separator);
+		if (folderIndex != -1) {
+			File folders = new File(path.substring(0,
+					path.lastIndexOf(File.separator)));
+			folders.mkdirs();
+		}
 		File file = new File(path);
 		long localFileSize, serverFileSize;
 		if (file.exists()) {
