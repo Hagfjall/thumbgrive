@@ -38,12 +38,12 @@ public class Thumbdrive {
 		retrieveThumbnailsLinks.printMaps();
 		retrieveThumbnailsLinks.run();
 		retrieveThumbnailsLinks.printMaps();
-		HashMap<String, String> links = retrieveThumbnailsLinks
+		HashMap<String, ThumbnailPath> links = retrieveThumbnailsLinks
 				.getThumbnailsLinks();
 		// for (String path : links.keySet()) {
 		// System.out.println(path + " = " + links.get(path));
 		// }
-//		new DownloadThumbnailsExcecutor(links).start();
+		new DownloadThumbnailsExcecutor(links).start();
 	}
 	
 	private static void cleanUp() {

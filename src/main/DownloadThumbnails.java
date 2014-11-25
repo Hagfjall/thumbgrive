@@ -17,10 +17,10 @@ public class DownloadThumbnails implements Callable<Boolean> {
 	private String path;
 	private URL url;
 
-	public DownloadThumbnails(String link, String path)
+	public DownloadThumbnails(ThumbnailPath thumbnailPath)
 			throws MalformedURLException {
-		this.path = path;
-		url = new URL(link);
+		this.path = thumbnailPath.getPath();
+		url = new URL(thumbnailPath.getThumbnailLink());
 	}
 
 	public String getPath() {

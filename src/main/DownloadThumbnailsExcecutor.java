@@ -3,7 +3,10 @@ package main;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -13,34 +16,39 @@ import java.util.logging.Logger;
 
 public class DownloadThumbnailsExcecutor {
 
-	private final static Logger LOGGER = Logger.getLogger(DownloadThumbnailsExcecutor.class
-			.getName());
-	private HashMap<String, String> thumbnailLinks;
+	private final static Logger LOGGER = Logger
+			.getLogger(DownloadThumbnailsExcecutor.class.getName());
+	private HashMap<String, ThumbnailPath> fileIdToThumbnail;
 
-	public DownloadThumbnailsExcecutor(HashMap<String, String> thumbnailLinks) {
-		this.thumbnailLinks = thumbnailLinks;
+	public DownloadThumbnailsExcecutor(
+			HashMap<String, ThumbnailPath> fileIdToThumbnail) {
+		this.fileIdToThumbnail = fileIdToThumbnail;
 	}
 
 	public void start() {
 		ExecutorService exc = null;
-		int nbrOfThumbnails = thumbnailLinks.size();
+		int nbrOfThumbnails = fileIdToThumbnail.size();
 		int nbrOfDownloaded = 0;
-		LOGGER.fine("Starting download, number of files to download is " + nbrOfThumbnails);
+		LOGGER.fine("Starting download, number of files to download is "
+				+ nbrOfThumbnails);
 		try {
-			exc = Executors.newFixedThreadPool(4);
+			exc = Executors.newFixedThreadPool(1);
 			List<Future<Boolean>> runners = new ArrayList<Future<Boolean>>(
-					thumbnailLinks.size());
-			
-			for (String link : thumbnailLinks.keySet()) {
-				Callable<Boolean> runner = new DownloadThumbnails(link,
-						thumbnailLinks.get(link));
+					fileIdToThumbnail.size());
+
+			Iterator<Entry<String, ThumbnailPath>> it = fileIdToThumbnail
+					.entrySet().iterator();
+			while (it.hasNext()) {
+				Map.Entry<String, ThumbnailPath> me = it.next();
+				Callable<Boolean> runner = new DownloadThumbnails(me.getValue());
+				it.remove();
 				Future<Boolean> future = exc.submit(runner);
 				runners.add(future);
 			}
 			for (Future<Boolean> downloader : runners) {
 				try {
 					if (downloader.get()) {
-						LOGGER.finest(nbrOfDownloaded +  " downloaded");
+						LOGGER.finest(nbrOfDownloaded + " downloaded");
 						nbrOfDownloaded++;
 					}
 				} catch (InterruptedException | ExecutionException e) {
@@ -54,7 +62,8 @@ public class DownloadThumbnailsExcecutor {
 			if (exc != null)
 				exc.shutdown();
 		}
-		LOGGER.info("Downloaded " + nbrOfDownloaded + " out of " + nbrOfThumbnails);
+		LOGGER.info("Downloaded " + nbrOfDownloaded + " out of "
+				+ nbrOfThumbnails);
 	}
 
 }
