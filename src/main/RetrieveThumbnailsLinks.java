@@ -44,7 +44,7 @@ public class RetrieveThumbnailsLinks {
 	public RetrieveThumbnailsLinks(int thumbnailSize, String... filetypes) {
 		LOGGER.setLevel(Level.ALL);
 		this.filetypes = filetypes;
-		Utils.THUMBNAIL_SIZE = thumbnailSize;
+		Utils.THUMBNAIL_SIZE_PREF = thumbnailSize;
 		fileIdThumbnails = loadSavedState();
 		if (fileIdThumbnails == null) {
 			fileIdThumbnails = new HashMap<String, ThumbnailPath>();
@@ -125,15 +125,14 @@ public class RetrieveThumbnailsLinks {
 	private void buildFolderTree(List<File> searchResult) {
 		for (File file : searchResult) {
 			saveStateToFile();
-			if (file.getThumbnailLink() == null) {
+			String thumbnailLink = file.getThumbnailLink();
+			if (thumbnailLink == null) {
 				// the file aren't a image
 				LOGGER.fine("'"
 						+ file.getTitle()
 						+ "' doesn't have a thumbnail-link. Could be because google hasn't made one yet or the file isn't an image");
 				continue;
 			}
-			String thumbnailLink = file.getThumbnailLink();
-//			thumbnailLink = Utils.removeSizeOfThumbnailPref(thumbnailLink);
 			if (fileIdThumbnails.get(file.getId()) != null) {
 				LOGGER.finer("already got the thumbnail-link for '"
 						+ file.getTitle() + "'");
@@ -147,18 +146,19 @@ public class RetrieveThumbnailsLinks {
 						+ file.getTitle() + "'" + " reason: " + e.getMessage());
 				continue;
 			}
-//			if (fullPath.size() < 1) {
-//				// the file doesn't have any parent folder, is probably
-//				// archived or in the "share" area, do not download the
-//				// thumbnail
-//				LOGGER.fine("'"
-//						+ file.getTitle()
-//						+ "' does not have a parent folder, it is probably archived, will not be downloaded");
-//				continue;
-//			}
+			// if (fullPath.size() < 1) {
+			// // the file doesn't have any parent folder, is probably
+			// // archived or in the "share" area, do not download the
+			// // thumbnail
+			// LOGGER.fine("'"
+			// + file.getTitle()
+			// +
+			// "' does not have a parent folder, it is probably archived, will not be downloaded");
+			// continue;
+			// }
 
 			StringBuilder filePath = new StringBuilder(256);
-			for (int i = 0; i < fullPath.size(); i++) {
+			for (int i = 1; i < fullPath.size(); i++) {
 				String partOfFullPath = fullPath.get(i);
 				if (i != fullPath.size() - 1)
 					partOfFullPath = Utils
@@ -178,20 +178,20 @@ public class RetrieveThumbnailsLinks {
 
 	private List<String> getFullPath(Drive service, String fileId)
 			throws IOException {
-		LinkedList<String> ret = new LinkedList<String>();
+		LinkedList<String> path = new LinkedList<String>();
 		String currentFileId = fileId;
 		for (int depth = 0; depth < 30; depth++) {
 			String parentFileId = getParentId(service, currentFileId);
 			if (parentFileId == null) {
 				LOGGER.finest("'" + getTitleOfId(service, currentFileId)
 						+ "' gets null for it parent;");
-				return ret;
+				return path;
 			}
 			if (parentFileId.equals("ROOT_FOLDER")) {
-				ret.add(0, getTitleOfId(service, currentFileId));
-				return ret;
+				path.add(0, getTitleOfId(service, currentFileId));
+				return path;
 			}
-			ret.add(0, getTitleOfId(service, currentFileId));
+			path.add(0, getTitleOfId(service, currentFileId));
 			currentFileId = parentFileId;
 		}
 		throw new IOException(
@@ -210,27 +210,17 @@ public class RetrieveThumbnailsLinks {
 		if (parentId == null) {
 			File currentFile = service.files().get(id).execute();
 			if (currentFile.getParents().size() == 0) {
-				// ParentReference currentFile2 =
-				// fileAndParent.put(currentFile.getId(), "ROOT_FOLDER");
 				throw new IOException("'" + currentFile.getTitle()
 						+ "' doesn't have any parent, archived?");
 			}
-			boolean foundRoot = false;
 			for (ParentReference parent : currentFile.getParents()) {
 				if (parent.getIsRoot()) {
 					parentId = parent.getId();
-					foundRoot = true;
-					break;
+					fileAndParent.put(parentId, "ROOT_FOLDER");
+					fileAndParent.put(id, parentId);
 				}
 			}
-			if (!foundRoot) {
-				parentId = currentFile.getParents().get(0).getId();
-			} else {
-				// parentId =
-				// fileAndParent.put(id, parentId);
-				// return null;
-				return "ROOT_FOLDER";
-			}
+			parentId = currentFile.getParents().get(0).getId();
 			fileAndParent.put(id, parentId);
 		}
 		return parentId;
@@ -254,8 +244,13 @@ public class RetrieveThumbnailsLinks {
 		System.out.println("\tfileAndParent:");
 		for (String key : fileAndParent.keySet()) {
 			System.out.print(key + "\t = " + fileAndParent.get(key));
-			System.out.println(" ->\t" + getTitleOfId(service, key) + " = "
-					+ getTitleOfId(service, fileAndParent.get(key)));
+			if (fileAndParent.get(key).equals("ROOT_FOLDER")) {
+				System.out.println(" ->\t" + getTitleOfId(service, key) + " = "
+						+ fileAndParent.get(key));
+			} else {
+				System.out.println(" ->\t" + getTitleOfId(service, key) + " = "
+						+ getTitleOfId(service, fileAndParent.get(key)));
+			}
 		}
 		System.out.println("\tFileIdToThumbnails");
 		for (String key : fileIdThumbnails.keySet()) {

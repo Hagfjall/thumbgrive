@@ -43,7 +43,7 @@ public class DownloadThumbnails implements Callable<Boolean> {
 			localFileSize = file.length();
 			serverFileSize = conn.getContentLengthLong();
 			if (localFileSize != serverFileSize) {
-				if (!Utils.FORCE_RELOAD) {
+				if (!Utils.FORCE_RELOAD_PREF) {
 					LOGGER.warning("'"
 							+ file
 							+ "' already exists but the size differs, local copy: "

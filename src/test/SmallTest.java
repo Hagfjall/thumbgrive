@@ -13,11 +13,12 @@ public class SmallTest {
 	public static void main(String[] args) throws IOException {
 		// stringFilenameSafe();
 		// pathSeparator();
-		System.out.println(Utils.removeSizeOfThumbnailPref("https://lh4.googleusercontent.com/hVnLoEqTVp3c-xvV-iolZ5jDm9l1a44kfAElIBwMv2oiMnSi-7MDGh4pP0c9wJpfSDSlGw=s220"));
 //		HashMap<String, String> links = makeHashMap();
 //		writeObjectToFile(links);
 //		links.put("test", "new values");
 //		writeObjectToFile(links);
+		Utils.THUMBNAIL_SIZE_PREF = 500;
+		System.out.println(Utils.changeSizeOfThumbnailToPref(null));
 	}
 	
 	static HashMap<String, String> makeHashMap() {
