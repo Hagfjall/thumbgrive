@@ -2,12 +2,13 @@ package main;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -18,6 +19,8 @@ import java.util.logging.Logger;
 import main.GoogleApi.CodeExchangeException;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
+import com.google.api.client.http.GenericUrl;
+import com.google.api.client.http.HttpResponse;
 import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.FileList;
@@ -176,6 +179,38 @@ public class RetrieveThumbnailsLinks {
 		saveStateToFile();
 	}
 
+	public void downloadImages() {
+		HttpResponse resp;
+		for (ThumbnailPath thumbnailPath : fileIdThumbnails.values()) {
+			try {
+				String path = thumbnailPath.getPath();
+				resp = service
+						.getRequestFactory()
+						.buildGetRequest(
+								new GenericUrl(thumbnailPath.getThumbnailLink()))
+						.execute();
+				int folderIndex = path.lastIndexOf(java.io.File.separator);
+				if (folderIndex != -1) {
+					java.io.File folders = new java.io.File(path.substring(0,
+							path.lastIndexOf(java.io.File.separator)));
+					folders.mkdirs();
+				}
+				java.io.File file = new java.io.File(path);
+				FileOutputStream fos = new FileOutputStream(
+						thumbnailPath.getPath());
+				ReadableByteChannel rbc = Channels
+						.newChannel(resp.getContent());
+				fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+				LOGGER.info("'" + thumbnailPath.getPath() + "' downloaded");
+				fos.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+
+	}
+
 	private List<String> getFullPath(Drive service, String fileId)
 			throws IOException {
 		LinkedList<String> path = new LinkedList<String>();
@@ -195,7 +230,7 @@ public class RetrieveThumbnailsLinks {
 			currentFileId = parentFileId;
 		}
 		String spath = "";
-		for(String s : path) {
+		for (String s : path) {
 			spath += s + "/";
 		}
 		LOGGER.finer("DEPTH-EXCEPTION-PATH: " + spath);
@@ -223,15 +258,16 @@ public class RetrieveThumbnailsLinks {
 					parentId = parent.getId();
 					fileAndParent.put(parentId, "ROOT_FOLDER");
 					fileAndParent.put(id, parentId);
-//					LOGGER.finer(currentFile.getTitle() + " found root-folder");
+					// LOGGER.finer(currentFile.getTitle() +
+					// " found root-folder");
 				}
 			}
 			parentId = currentFile.getParents().get(0).getId();
 			fileAndParent.put(id, parentId);
-		}else {
-//			LOGGER.finer("got parent-id from hashmap" );
+		} else {
+			// LOGGER.finer("got parent-id from hashmap" );
 		}
-		
+
 		return parentId;
 	}
 

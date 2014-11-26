@@ -37,14 +37,15 @@ public class Thumbdrive {
 		RetrieveThumbnailsLinks retrieveThumbnailsLinks = new RetrieveThumbnailsLinks(
 				Integer.parseInt(args[0]), args[1]);
 		// retrieveThumbnailsLinks.printMaps();
-		// retrieveThumbnailsLinks.run();
-		// retrieveThumbnailsLinks.printMaps();
+		 retrieveThumbnailsLinks.run();
+		 retrieveThumbnailsLinks.printMaps();
+		 retrieveThumbnailsLinks.downloadImages();
 		HashMap<String, ThumbnailPath> links = retrieveThumbnailsLinks
 				.getThumbnailsLinks();
 		// for (String path : links.keySet()) {
 		// System.out.println(path + " = " + links.get(path));
 		// }
-		new DownloadThumbnailsExcecutor(links).start();
+//		new DownloadThumbnailsExcecutor(links).start();
 	}
 
 	private static void cleanUp() {
