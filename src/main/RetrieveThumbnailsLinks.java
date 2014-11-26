@@ -194,6 +194,11 @@ public class RetrieveThumbnailsLinks {
 			path.add(0, getTitleOfId(service, currentFileId));
 			currentFileId = parentFileId;
 		}
+		String spath = "";
+		for(String s : path) {
+			spath += s + "/";
+		}
+		LOGGER.finer("DEPTH-EXCEPTION-PATH: " + spath);
 		throw new IOException(
 				"Depth of file exceeded 30 folders, a file's parent-loop?");
 	}
@@ -218,11 +223,15 @@ public class RetrieveThumbnailsLinks {
 					parentId = parent.getId();
 					fileAndParent.put(parentId, "ROOT_FOLDER");
 					fileAndParent.put(id, parentId);
+//					LOGGER.finer(currentFile.getTitle() + " found root-folder");
 				}
 			}
 			parentId = currentFile.getParents().get(0).getId();
 			fileAndParent.put(id, parentId);
+		}else {
+//			LOGGER.finer("got parent-id from hashmap" );
 		}
+		
 		return parentId;
 	}
 
