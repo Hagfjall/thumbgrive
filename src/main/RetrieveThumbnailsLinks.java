@@ -2,13 +2,9 @@ package main;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -19,8 +15,6 @@ import java.util.logging.Logger;
 import main.GoogleApi.CodeExchangeException;
 
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential;
-import com.google.api.client.http.GenericUrl;
-import com.google.api.client.http.HttpResponse;
 import com.google.api.services.drive.Drive;
 import com.google.api.services.drive.model.File;
 import com.google.api.services.drive.model.FileList;
@@ -43,12 +37,17 @@ public class RetrieveThumbnailsLinks {
 																// disk
 	private HashMap<String, String> idToTitle;
 	private HashMap<String, String> fileAndParent;
+	private ThumbnailPathHolder thumbnailPathHolder;
 
-	public RetrieveThumbnailsLinks(int thumbnailSize, String... filetypes) {
+	public RetrieveThumbnailsLinks(ThumbnailPathHolder thumbnailPathHolder,
+			int thumbnailSize, String... filetypes) {
 		LOGGER.setLevel(Level.ALL);
-		this.filetypes = filetypes;
+		this.thumbnailPathHolder = thumbnailPathHolder;
 		Utils.THUMBNAIL_SIZE_PREF = thumbnailSize;
-		fileIdThumbnails = loadSavedState();
+		this.filetypes = filetypes;
+		Object read = Utils.readObjectFromFile(Utils.CURRENT_STATE_FILE_NAME);
+		if (read instanceof HashMap<?, ?>)
+			fileIdThumbnails = (HashMap<String, ThumbnailPath>) read;
 		if (fileIdThumbnails == null) {
 			fileIdThumbnails = new HashMap<String, ThumbnailPath>();
 			LOGGER.finer(Utils.CURRENT_STATE_FILE_NAME + " not loaded...");
@@ -63,18 +62,6 @@ public class RetrieveThumbnailsLinks {
 			service = GoogleApi.buildService(credentials);
 		} catch (CodeExchangeException | IOException e) {
 			e.printStackTrace();
-		}
-	}
-
-	private HashMap<String, ThumbnailPath> loadSavedState() {
-		try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(
-				Utils.CURRENT_STATE_FILE_NAME))) {
-			HashMap<String, ThumbnailPath> fileIdThumbnails = (HashMap<String, ThumbnailPath>) ois
-					.readObject();
-			return fileIdThumbnails;
-		} catch (IOException | ClassNotFoundException e) {
-			LOGGER.warning("Could not load previous state, " + e.toString());
-			return null;
 		}
 	}
 
@@ -136,11 +123,13 @@ public class RetrieveThumbnailsLinks {
 						+ "' doesn't have a thumbnail-link. Could be because google hasn't made one yet or the file isn't an image");
 				continue;
 			}
-			if (fileIdThumbnails.get(file.getId()) != null) {
-				LOGGER.finer("already got the thumbnail-link for '"
-						+ file.getTitle() + "'");
-				continue;
-			}
+			thumbnailLink = Utils.changeSizeOfThumbnailToPref(thumbnailLink);
+			// this is not worth saving, seems like the link dies anyway...?
+			// if (fileIdThumbnails.get(file.getId()) != null) {
+			// LOGGER.finer("already got the thumbnail-link for '"
+			// + file.getTitle() + "'");
+			// continue;
+			// }
 			List<String> fullPath;
 			try {
 				fullPath = getFullPath(service, file.getId());
@@ -172,43 +161,13 @@ public class RetrieveThumbnailsLinks {
 			filePath.append(".jpg"); // TODO the thumbnails from
 										// google-servers
 										// are always(?) in jpg
-			fileIdThumbnails.put(file.getId(),
-					new ThumbnailPath(filePath.toString(), thumbnailLink));
+			ThumbnailPath temp = new ThumbnailPath(filePath.toString(),
+					thumbnailLink);
+			fileIdThumbnails.put(file.getId(), temp);
+			thumbnailPathHolder.insert(temp);
 		}
 		fileCounter = -1;
 		saveStateToFile();
-	}
-
-	public void downloadImages() {
-		HttpResponse resp;
-		for (ThumbnailPath thumbnailPath : fileIdThumbnails.values()) {
-			try {
-				String path = thumbnailPath.getPath();
-				resp = service
-						.getRequestFactory()
-						.buildGetRequest(
-								new GenericUrl(thumbnailPath.getThumbnailLink()))
-						.execute();
-				int folderIndex = path.lastIndexOf(java.io.File.separator);
-				if (folderIndex != -1) {
-					java.io.File folders = new java.io.File(path.substring(0,
-							path.lastIndexOf(java.io.File.separator)));
-					folders.mkdirs();
-				}
-				java.io.File file = new java.io.File(path);
-				FileOutputStream fos = new FileOutputStream(
-						thumbnailPath.getPath());
-				ReadableByteChannel rbc = Channels
-						.newChannel(resp.getContent());
-				fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-				LOGGER.info("'" + thumbnailPath.getPath() + "' downloaded");
-				fos.close();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-		}
-
 	}
 
 	private List<String> getFullPath(Drive service, String fileId)
@@ -307,13 +266,8 @@ public class RetrieveThumbnailsLinks {
 		fileCounter++;
 		if (fileCounter % 20 == 0) {
 			LOGGER.finer("saving recieved links so far to file");
-			try (ObjectOutputStream oos = new ObjectOutputStream(
-					new FileOutputStream(Utils.CURRENT_STATE_FILE_NAME))) {
-				oos.writeObject(fileIdThumbnails);
-			} catch (IOException e) {
-				LOGGER.finer("Could not save current state, reason: "
-						+ e.toString());
-			}
+			Utils.writeObjectToFile(fileIdThumbnails,
+					Utils.CURRENT_STATE_FILE_NAME);
 		}
 	}
 
@@ -333,6 +287,7 @@ public class RetrieveThumbnailsLinks {
 						+ e.toString());
 			}
 		}
+		thumbnailPathHolder.setAllLoaded();
 	}
 
 }

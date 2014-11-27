@@ -1,11 +1,12 @@
 package main;
 
 import java.io.IOException;
-import java.util.HashMap;
+import java.util.List;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.FileHandler;
 import java.util.logging.Handler;
 import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 public class Thumbdrive {
 
@@ -28,24 +29,35 @@ public class Thumbdrive {
 			// there was no console handler found, create a new one
 			consoleHandler = new ConsoleHandler();
 			topLogger.addHandler(consoleHandler);
-			topLogger.addHandler(new FileHandler("log.txt", true));
+			FileHandler fileHandler = new FileHandler("log.txt");
+			topLogger.addHandler(fileHandler);
+			fileHandler.setFormatter(new SimpleFormatter());
+			fileHandler.setLevel(java.util.logging.Level.ALL);
 		}
-		// set the console handler to fine:
 		consoleHandler.setLevel(java.util.logging.Level.ALL);
 
+		if (args[0].equals("retry")) {
+			List<ThumbnailPath> failedDownloads = (List<ThumbnailPath>) Utils
+					.readObjectFromFile(".failedDownloads");
+			if (failedDownloads == null) {
+				topLogger.warning("Could not read file .failedDownloads");
+				return;
+			}
+			for (ThumbnailPath t : failedDownloads) {
+				DownloadThumbnails.downloadFile(t.getThumbnailLink(),
+						t.getPath());
+			}
+		}
 		// TODO read all arguments
+		ThumbnailPathHolder thumbnailPathHolder = new ThumbnailPathHolder();
+		DownloadThumbnails downloadThumbnail = new DownloadThumbnails(
+				thumbnailPathHolder);
+		downloadThumbnail.start();
 		RetrieveThumbnailsLinks retrieveThumbnailsLinks = new RetrieveThumbnailsLinks(
-				Integer.parseInt(args[0]), args[1]);
-		// retrieveThumbnailsLinks.printMaps();
-		 retrieveThumbnailsLinks.run();
-		 retrieveThumbnailsLinks.printMaps();
-		 retrieveThumbnailsLinks.downloadImages();
-		HashMap<String, ThumbnailPath> links = retrieveThumbnailsLinks
-				.getThumbnailsLinks();
-		// for (String path : links.keySet()) {
-		// System.out.println(path + " = " + links.get(path));
-		// }
-//		new DownloadThumbnailsExcecutor(links).start();
+				thumbnailPathHolder, Integer.parseInt(args[0]), args[1]);
+		retrieveThumbnailsLinks.printMaps();
+		retrieveThumbnailsLinks.run();
+		retrieveThumbnailsLinks.printMaps();
 	}
 
 	private static void cleanUp() {
