@@ -124,12 +124,6 @@ public class RetrieveThumbnailsLinks {
 				continue;
 			}
 			thumbnailLink = Utils.changeSizeOfThumbnailToPref(thumbnailLink);
-			// this is not worth saving, seems like the link dies anyway...?
-			// if (fileIdThumbnails.get(file.getId()) != null) {
-			// LOGGER.finer("already got the thumbnail-link for '"
-			// + file.getTitle() + "'");
-			// continue;
-			// }
 			List<String> fullPath;
 			try {
 				fullPath = getFullPath(service, file.getId());
@@ -138,16 +132,6 @@ public class RetrieveThumbnailsLinks {
 						+ file.getTitle() + "'" + " reason: " + e.getMessage());
 				continue;
 			}
-			// if (fullPath.size() < 1) {
-			// // the file doesn't have any parent folder, is probably
-			// // archived or in the "share" area, do not download the
-			// // thumbnail
-			// LOGGER.fine("'"
-			// + file.getTitle()
-			// +
-			// "' does not have a parent folder, it is probably archived, will not be downloaded");
-			// continue;
-			// }
 
 			StringBuilder filePath = new StringBuilder(256);
 			for (int i = 1; i < fullPath.size(); i++) {
