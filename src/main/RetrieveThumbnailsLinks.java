@@ -27,12 +27,7 @@ public class RetrieveThumbnailsLinks {
 	private Drive service;
 
 	private int fileCounter = 0;
-	private HashMap<String, ThumbnailPath> fileIdThumbnails; // TODO save all
-																// the fetched
-																// links to this
-																// map and save
-																// preriod. to
-																// disk
+	private HashMap<String, ThumbnailPath> idToThumbnails;
 	private HashMap<String, String> idToTitle;
 	private HashMap<String, String> idToParent;
 	private ThumbnailPathHolder thumbnailPathHolder;
@@ -45,13 +40,13 @@ public class RetrieveThumbnailsLinks {
 		this.filetypes = filetypes;
 		Object read = Utils.readObjectFromFile(Utils.CURRENT_STATE_FILE_NAME);
 		if (read instanceof HashMap<?, ?>)
-			fileIdThumbnails = (HashMap<String, ThumbnailPath>) read;
-		if (fileIdThumbnails == null) {
-			fileIdThumbnails = new HashMap<String, ThumbnailPath>();
+			idToThumbnails = (HashMap<String, ThumbnailPath>) read;
+		if (idToThumbnails == null) {
+			idToThumbnails = new HashMap<String, ThumbnailPath>();
 			LOGGER.finer(Utils.CURRENT_STATE_FILE_NAME + " not loaded...");
 		} else {
 			LOGGER.finer(Utils.CURRENT_STATE_FILE_NAME + " loaded with "
-					+ fileIdThumbnails.size() + " links");
+					+ idToThumbnails.size() + " links");
 		}
 		idToTitle = new HashMap<String, String>();
 		idToParent = new HashMap<String, String>();
@@ -151,8 +146,9 @@ public class RetrieveThumbnailsLinks {
 										// are always(?) in jpg
 			ThumbnailPath temp = new ThumbnailPath(filePath.toString(),
 					thumbnailLink);
-			fileIdThumbnails.put(file.getId(), temp);
-			thumbnailPathHolder.insert(temp);
+			if(idToThumbnails.put(file.getId(), temp) == null);
+			// no need to download a file twice...
+				thumbnailPathHolder.insert(temp);
 		}
 		fileCounter = -1;
 		saveStateToFile();
@@ -239,8 +235,8 @@ public class RetrieveThumbnailsLinks {
 			}
 		}
 		System.out.println("\tFileIdToThumbnails");
-		for (String key : fileIdThumbnails.keySet()) {
-			System.out.println(key + "\t = " + fileIdThumbnails.get(key));
+		for (String key : idToThumbnails.keySet()) {
+			System.out.println(key + "\t = " + idToThumbnails.get(key));
 		}
 	}
 
@@ -248,7 +244,7 @@ public class RetrieveThumbnailsLinks {
 		fileCounter++;
 		if (fileCounter % 20 == 0) {
 			LOGGER.finer("saving recieved links so far to file");
-			Utils.writeObjectToFile(fileIdThumbnails,
+			Utils.writeObjectToFile(idToThumbnails,
 					Utils.CURRENT_STATE_FILE_NAME);
 		}
 	}
