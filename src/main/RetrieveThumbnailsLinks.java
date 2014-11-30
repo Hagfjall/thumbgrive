@@ -38,16 +38,7 @@ public class RetrieveThumbnailsLinks {
 		this.thumbnailPathHolder = thumbnailPathHolder;
 		Utils.THUMBNAIL_SIZE_PREF = thumbnailSize;
 		this.filetypes = filetypes;
-		Object read = Utils.readObjectFromFile(Utils.CURRENT_STATE_FILE_NAME);
-		if (read instanceof HashMap<?, ?>)
-			idToThumbnails = (HashMap<String, ThumbnailPath>) read;
-		if (idToThumbnails == null) {
-			idToThumbnails = new HashMap<String, ThumbnailPath>();
-			LOGGER.finer(Utils.CURRENT_STATE_FILE_NAME + " not loaded...");
-		} else {
-			LOGGER.finer(Utils.CURRENT_STATE_FILE_NAME + " loaded with "
-					+ idToThumbnails.size() + " links");
-		}
+		idToThumbnails = new HashMap<String, ThumbnailPath>();
 		idToTitle = new HashMap<String, String>();
 		idToParent = new HashMap<String, String>();
 		try {
@@ -146,9 +137,10 @@ public class RetrieveThumbnailsLinks {
 										// are always(?) in jpg
 			ThumbnailPath temp = new ThumbnailPath(filePath.toString(),
 					thumbnailLink);
-			if(idToThumbnails.put(file.getId(), temp) == null);
-			// no need to download a file twice...
+			if (idToThumbnails.put(file.getId(), temp) == null) {
+				// no need to download a file twice...
 				thumbnailPathHolder.insert(temp);
+			}
 		}
 		fileCounter = -1;
 		saveStateToFile();
@@ -181,6 +173,9 @@ public class RetrieveThumbnailsLinks {
 				"Depth of file exceeded 30 folders, a file's parent-loop?");
 	}
 
+	// here i'm saving all the files and it first parent to the hashmap, takes
+	// a lot of memory but saves a lot of times if several search-q are used and
+	// same file appears more the once, what to choose?!
 	private String getParentId(Drive service, String id) throws IOException {
 		String parentId = idToParent.get(id);
 		if (parentId == null) {
@@ -223,7 +218,7 @@ public class RetrieveThumbnailsLinks {
 		for (String key : idToTitle.keySet()) {
 			System.out.println(key + " = '" + idToTitle.get(key) + "'");
 		}
-		System.out.println("\tfileAndParent:");
+		System.out.println("\tidToParent:");
 		for (String key : idToParent.keySet()) {
 			System.out.print(key + "\t = " + idToParent.get(key));
 			if (idToParent.get(key).equals("ROOT_FOLDER")) {
@@ -234,7 +229,7 @@ public class RetrieveThumbnailsLinks {
 						+ getTitleOfId(service, idToParent.get(key)));
 			}
 		}
-		System.out.println("\tFileIdToThumbnails");
+		System.out.println("\tidToThumbnails");
 		for (String key : idToThumbnails.keySet()) {
 			System.out.println(key + "\t = " + idToThumbnails.get(key));
 		}
@@ -265,7 +260,7 @@ public class RetrieveThumbnailsLinks {
 						+ e.toString());
 			}
 		}
-		thumbnailPathHolder.setAllLoaded();
+		LOGGER.fine("downloaded " + idToThumbnails.size() + " thumbnail-links!");
 	}
 
 }

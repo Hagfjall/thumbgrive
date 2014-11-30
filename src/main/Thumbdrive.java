@@ -55,9 +55,10 @@ public class Thumbdrive {
 		downloadThumbnail.start();
 		RetrieveThumbnailsLinks retrieveThumbnailsLinks = new RetrieveThumbnailsLinks(
 				thumbnailPathHolder, Integer.parseInt(args[0]), args[1]);
-		retrieveThumbnailsLinks.printMaps();
+//		retrieveThumbnailsLinks.printMaps();
 		retrieveThumbnailsLinks.run();
-		retrieveThumbnailsLinks.printMaps();
+		thumbnailPathHolder.setAllLoaded();
+//		retrieveThumbnailsLinks.printMaps();
 	}
 
 	private static void cleanUp() {
