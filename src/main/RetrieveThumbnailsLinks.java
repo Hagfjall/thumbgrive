@@ -1,10 +1,8 @@
 package main;
 
 import java.io.BufferedReader;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -36,7 +34,7 @@ public class RetrieveThumbnailsLinks {
 																// preriod. to
 																// disk
 	private HashMap<String, String> idToTitle;
-	private HashMap<String, String> fileAndParent;
+	private HashMap<String, String> idToParent;
 	private ThumbnailPathHolder thumbnailPathHolder;
 
 	public RetrieveThumbnailsLinks(ThumbnailPathHolder thumbnailPathHolder,
@@ -56,21 +54,22 @@ public class RetrieveThumbnailsLinks {
 					+ fileIdThumbnails.size() + " links");
 		}
 		idToTitle = new HashMap<String, String>();
-		fileAndParent = new HashMap<String, String>();
+		idToParent = new HashMap<String, String>();
 		try {
 			credentials = loadCredentials();
 			service = GoogleApi.buildService(credentials);
-		} catch (CodeExchangeException | IOException e) {
-			e.printStackTrace();
+		} catch (CodeExchangeException e) {
+			LOGGER.warning("could not load the credentials... msg: "
+					+ e.toString());
 		}
 	}
 
-	public HashMap<String, ThumbnailPath> getThumbnailsLinks() {
-		return fileIdThumbnails;
-	}
+	//
+	// public HashMap<String, ThumbnailPath> getThumbnailsLinks() {
+	// return fileIdThumbnails;
+	// }
 
-	private GoogleCredential loadCredentials() throws CodeExchangeException,
-			IOException {
+	private GoogleCredential loadCredentials() throws CodeExchangeException {
 		GoogleCredential credentials = GoogleApi.getStoredCredentialsInFile();
 		if (credentials == null) { // getting all new tokens
 			String url = GoogleApi.getAuthorizationUrl();
@@ -79,10 +78,15 @@ public class RetrieveThumbnailsLinks {
 					.println("Please use this url to get the key from google and paste it here");
 			BufferedReader br = new BufferedReader(new InputStreamReader(
 					System.in));
-			String responseCode = br.readLine();
-			br.close();
-			credentials = GoogleApi
-					.exchangeCodeAndStoreCredentials(responseCode);
+			String responseCode;
+			try {
+				responseCode = br.readLine();
+				br.close();
+				credentials = GoogleApi
+						.exchangeCodeAndStoreCredentials(responseCode);
+			} catch (IOException e) {
+				return credentials = null;
+			}
 		}
 		return credentials;
 
@@ -142,7 +146,7 @@ public class RetrieveThumbnailsLinks {
 							+ java.io.File.separator;
 				filePath.append(partOfFullPath);
 			}
-			filePath.append(".jpg"); // TODO the thumbnails from
+			filePath.append(".jpg"); // the thumbnails from
 										// google-servers
 										// are always(?) in jpg
 			ThumbnailPath temp = new ThumbnailPath(filePath.toString(),
@@ -181,17 +185,11 @@ public class RetrieveThumbnailsLinks {
 				"Depth of file exceeded 30 folders, a file's parent-loop?");
 	}
 
-	/**
-	 * 
-	 * @param service
-	 * @param id
-	 * @return the parent id or null if there
-	 * @throws IOException
-	 */
 	private String getParentId(Drive service, String id) throws IOException {
-		String parentId = fileAndParent.get(id);
+		String parentId = idToParent.get(id);
 		if (parentId == null) {
 			File currentFile = service.files().get(id).execute();
+			// TODO not needed when the search-q is in order
 			if (currentFile.getParents().size() == 0) {
 				throw new IOException("'" + currentFile.getTitle()
 						+ "' doesn't have any parent, archived?");
@@ -199,16 +197,15 @@ public class RetrieveThumbnailsLinks {
 			for (ParentReference parent : currentFile.getParents()) {
 				if (parent.getIsRoot()) {
 					parentId = parent.getId();
-					fileAndParent.put(parentId, "ROOT_FOLDER");
-					fileAndParent.put(id, parentId);
-					// LOGGER.finer(currentFile.getTitle() +
-					// " found root-folder");
+					idToParent.put(parentId, "ROOT_FOLDER");
+					idToParent.put(id, parentId);
+
+					// TODO this can be a problem if it's not the first parent
+					// that are the root-folder... solve!
 				}
 			}
 			parentId = currentFile.getParents().get(0).getId();
-			fileAndParent.put(id, parentId);
-		} else {
-			// LOGGER.finer("got parent-id from hashmap" );
+			idToParent.put(id, parentId);
 		}
 
 		return parentId;
@@ -219,7 +216,8 @@ public class RetrieveThumbnailsLinks {
 		if (title == null) {
 			File file = service.files().get(id).execute();
 			title = file.getTitle();
-			idToTitle.put(id, title);
+			if (file.getMimeType().equals("application/vnd.google-apps.folder"))
+				idToTitle.put(id, title);
 		}
 		return title;
 	}
@@ -230,14 +228,14 @@ public class RetrieveThumbnailsLinks {
 			System.out.println(key + " = '" + idToTitle.get(key) + "'");
 		}
 		System.out.println("\tfileAndParent:");
-		for (String key : fileAndParent.keySet()) {
-			System.out.print(key + "\t = " + fileAndParent.get(key));
-			if (fileAndParent.get(key).equals("ROOT_FOLDER")) {
+		for (String key : idToParent.keySet()) {
+			System.out.print(key + "\t = " + idToParent.get(key));
+			if (idToParent.get(key).equals("ROOT_FOLDER")) {
 				System.out.println(" ->\t" + getTitleOfId(service, key) + " = "
-						+ fileAndParent.get(key));
+						+ idToParent.get(key));
 			} else {
 				System.out.println(" ->\t" + getTitleOfId(service, key) + " = "
-						+ getTitleOfId(service, fileAndParent.get(key)));
+						+ getTitleOfId(service, idToParent.get(key)));
 			}
 		}
 		System.out.println("\tFileIdToThumbnails");

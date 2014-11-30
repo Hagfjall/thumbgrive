@@ -85,11 +85,20 @@ public class DownloadThumbnails extends Thread {
 
 			}
 		}
+		StringBuilder sb = new StringBuilder();
+		for (ThumbnailPath thumbnailPath : failedDownloads) {
+			sb.append(thumbnailPath);
+		}
+		if(failedDownloads.size() > 0) {
+			LOGGER.warning("Could not download these " + failedDownloads.size()
+					+ " thumbnails:\n" + sb.toString());
+		}
 		Utils.writeObjectToFile(failedDownloads, ".failedDownloads");
 		Utils.writeObjectToFile(succeededDownloads, ".succeededDownloads");
 	}
 
-	public static void downloadFile(String link, String fileOutput) throws IOException {
+	public static void downloadFile(String link, String fileOutput)
+			throws IOException {
 		URLConnection conn = new URL(link).openConnection();
 		FileOutputStream fos = new FileOutputStream(fileOutput);
 		ReadableByteChannel rbc = Channels.newChannel(conn.getInputStream());

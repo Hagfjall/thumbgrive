@@ -257,61 +257,6 @@ public class GoogleApi {
 		return urlBuilder.build();
 	}
 
-	/**
-	 * Retrieve credentials using the provided authorization code.
-	 *
-	 * This function exchanges the authorization code for an access token and
-	 * queries the UserInfo API to retrieve the user's e-mail address. If a
-	 * refresh token has been retrieved along with an access token, it is stored
-	 * in the application database using the user's e-mail address as key. If no
-	 * refresh token has been retrieved, the function checks in the application
-	 * database for one and returns it if found or throws a
-	 * NoRefreshTokenException with the authorization URL to redirect the user
-	 * to.
-	 *
-	 * @param authorizationCode
-	 *            Authorization code to use to retrieve an access token.
-	 * @param state
-	 *            State to set to the authorization URL in case of error.
-	 * @return OAuth 2.0 credentials instance containing an access and refresh
-	 *         token.
-	 * @throws NoRefreshTokenException
-	 *             No refresh token could be retrieved from the available
-	 *             sources.
-	 * @throws IOException
-	 *             Unable to load client_secrets.json.
-	 */
-	//TODO can this be removed?
-//	public static Credential getCredentials(String authorizationCode)
-//			throws CodeExchangeException, NoRefreshTokenException, IOException {
-//		try {
-//			Credential credentials = exchangeCodeAndStoreCredentials(authorizationCode);
-//			if (credentials.getRefreshToken() != null) {
-//				storeCredentials(credentials);
-//				return credentials;
-//			} else {
-//				credentials = getStoredCredentialsInFile();
-//				if (credentials != null
-//						&& credentials.getRefreshToken() != null) {
-//					return credentials;
-//				} else {
-//					System.err.println("null in the refreshtoken...?!");
-//				}
-//			}
-//		} catch (CodeExchangeException e) {
-//			e.printStackTrace();
-//			// Drive apps should try to retrieve the user and credentials for
-//			// the current
-//			// session.
-//			// If none is available, redirect the user to the authorization URL.
-//			e.setAuthorizationUrl(getAuthorizationUrl());
-//			throw e;
-//		}
-//		// No refresh token has been retrieved.
-//		String authorizationUrl = getAuthorizationUrl();
-//		throw new NoRefreshTokenException(authorizationUrl);
-//	}
-
 	public static Drive buildService(GoogleCredential credentials) {
 		HttpTransport httpTransport = new NetHttpTransport();
 		JacksonFactory jsonFactory = new JacksonFactory();

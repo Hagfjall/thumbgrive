@@ -28,7 +28,7 @@ public class Utils {
 				new FileOutputStream(filename))) {
 			oos.writeObject(obj);
 		} catch (IOException e) {
-			LOGGER.finer("Could not save current state, reason: "
+			LOGGER.warning("Could not save current state, reason: "
 					+ e.toString());
 		}
 	}
@@ -38,7 +38,8 @@ public class Utils {
 				filename))) {
 			return ois.readObject();
 		} catch (IOException | ClassNotFoundException e) {
-			LOGGER.warning("Could not load previous state, " + e.toString());
+			LOGGER.warning("Could not load '" + filename + "' : "
+					+ e.toString());
 			return null;
 		}
 	}
