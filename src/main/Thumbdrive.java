@@ -7,6 +7,17 @@ import java.util.logging.FileHandler;
 import java.util.logging.Handler;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
+/**
+ * Downloads the thumbnails available for the searched filetype
+ * @author Fredrik Hagfjäll
+ *
+ *
+ *	Arguments: 
+ *	--download-failed = download the failed thumbnails
+ *	-q filetype1 [filetype2...] = defines what search-q to use
+ *  --force-redownload = download even if file exists locally
+ *  -s NUMBER = size of the thumbnail, should not be bigger than //TODO check googles api
+ */
 
 public class Thumbdrive {
 

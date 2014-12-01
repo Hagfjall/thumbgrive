@@ -116,7 +116,7 @@ public class RetrieveThumbnailsLinks {
 			thumbnailLink = Utils.changeSizeOfThumbnailToPref(thumbnailLink);
 			List<String> fullPath;
 			try {
-				fullPath = getFullPath(service, file.getId());
+				fullPath = getFullPath(file.getId());
 			} catch (IOException e) {
 				LOGGER.warning("Did not get the full path of the file '"
 						+ file.getTitle() + "'" + " reason: " + e.getMessage());
@@ -146,22 +146,21 @@ public class RetrieveThumbnailsLinks {
 		saveStateToFile();
 	}
 
-	private List<String> getFullPath(Drive service, String fileId)
-			throws IOException {
+	private List<String> getFullPath(String fileId) throws IOException {
 		LinkedList<String> path = new LinkedList<String>();
 		String currentFileId = fileId;
 		for (int depth = 0; depth < 30; depth++) {
-			String parentFileId = getParentId(service, currentFileId);
+			String parentFileId = getParentId( currentFileId);
 			if (parentFileId == null) {
-				LOGGER.finest("'" + getTitleOfId(service, currentFileId)
+				LOGGER.finest("'" + getTitleOfId(currentFileId)
 						+ "' gets null for it parent;");
 				return path;
 			}
 			if (parentFileId.equals("ROOT_FOLDER")) {
-				path.add(0, getTitleOfId(service, currentFileId));
+				path.add(0, getTitleOfId(currentFileId));
 				return path;
 			}
-			path.add(0, getTitleOfId(service, currentFileId));
+			path.add(0, getTitleOfId(currentFileId));
 			currentFileId = parentFileId;
 		}
 		String spath = "";
@@ -176,7 +175,7 @@ public class RetrieveThumbnailsLinks {
 	// here i'm saving all the files and it first parent to the hashmap, takes
 	// a lot of memory but saves a lot of times if several search-q are used and
 	// same file appears more the once, what to choose?!
-	private String getParentId(Drive service, String id) throws IOException {
+	private String getParentId(String id) throws IOException {
 		String parentId = idToParent.get(id);
 		if (parentId == null) {
 			File currentFile = service.files().get(id).execute();
@@ -202,10 +201,10 @@ public class RetrieveThumbnailsLinks {
 		return parentId;
 	}
 
-	private String getTitleOfId(Drive service, String id) throws IOException {
+	private String getTitleOfId(String id) throws IOException {
 		String title = idToTitle.get(id);
 		if (title == null) {
-			File file = service.files().get(id).execute();
+			File file = getFile(id);
 			title = file.getTitle();
 			if (file.getMimeType().equals("application/vnd.google-apps.folder"))
 				idToTitle.put(id, title);
@@ -222,11 +221,11 @@ public class RetrieveThumbnailsLinks {
 		for (String key : idToParent.keySet()) {
 			System.out.print(key + "\t = " + idToParent.get(key));
 			if (idToParent.get(key).equals("ROOT_FOLDER")) {
-				System.out.println(" ->\t" + getTitleOfId(service, key) + " = "
+				System.out.println(" ->\t" + getTitleOfId(key) + " = "
 						+ idToParent.get(key));
 			} else {
-				System.out.println(" ->\t" + getTitleOfId(service, key) + " = "
-						+ getTitleOfId(service, idToParent.get(key)));
+				System.out.println(" ->\t" + getTitleOfId(key) + " = "
+						+ getTitleOfId(idToParent.get(key)));
 			}
 		}
 		System.out.println("\tidToThumbnails");
@@ -261,6 +260,16 @@ public class RetrieveThumbnailsLinks {
 			}
 		}
 		LOGGER.fine("downloaded " + idToThumbnails.size() + " thumbnail-links!");
+	}
+
+	public File getFile(String id) {
+		try {
+			return service.files().get(id).execute();
+		} catch (IOException e) {
+			LOGGER.warning("Could not get the File with id '" + id
+					+ "' , reason: " + e.toString());
+			return null;
+		}
 	}
 
 }

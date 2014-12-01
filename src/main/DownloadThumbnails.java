@@ -56,7 +56,7 @@ public class DownloadThumbnails extends Thread {
 									+ file
 									+ "' already exists but the size differs, local copy: "
 									+ localFileSize + " server copy: "
-									+ serverFileSize);
+									+ serverFileSize + ", will not download");
 						}
 					}
 					/*
@@ -77,7 +77,7 @@ public class DownloadThumbnails extends Thread {
 				fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
 				LOGGER.info("'" + path + "' downloaded");
 				fos.close();
-				// rbc.close();
+				rbc.close();
 				succeededDownloads.add(thumbnailPath);
 			} catch (IOException e) {
 				LOGGER.warning("Could not download " + path);
@@ -89,7 +89,7 @@ public class DownloadThumbnails extends Thread {
 		for (ThumbnailPath thumbnailPath : failedDownloads) {
 			sb.append(thumbnailPath);
 		}
-		if(failedDownloads.size() > 0) {
+		if (failedDownloads.size() > 0) {
 			LOGGER.warning("Could not download these " + failedDownloads.size()
 					+ " thumbnails:\n" + sb.toString());
 		}
