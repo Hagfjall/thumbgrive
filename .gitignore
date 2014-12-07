@@ -1,6 +1,8 @@
 .hashmapRetrievedLinks
+.failedDownloads
+.secret
+.succeededDownloads
 *.class
-Min_enhet/*
 # Mobile Tools for Java (J2ME)
 .mtj.tmp/
 
