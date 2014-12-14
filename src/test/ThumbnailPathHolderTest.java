@@ -25,7 +25,7 @@ public class ThumbnailPathHolderTest extends Thread {
 				e.printStackTrace();
 			}
 		}
-		test.setAllLoaded();
+		test.setAllThumbnailLinksRetrieved();
 
 	}
 

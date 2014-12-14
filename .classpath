@@ -32,5 +32,8 @@
 	<classpathentry kind="lib" path="/Users/Wycheproof/Dropbox/Programmering/!Externa bibliotek/drive/libs/transaction-api-1.1.jar"/>
 	<classpathentry kind="lib" path="/Users/Wycheproof/Dropbox/Programmering/!Externa bibliotek/drive/google-api-services-drive-v2-rev151-1.19.0.jar" sourcepath="/Users/Wycheproof/Dropbox/Programmering/!Externa bibliotek/drive/google-api-services-drive-v2-rev151-1.19.0-sources.jar"/>
 	<classpathentry kind="lib" path="/Users/Wycheproof/Dropbox/Programmering/!Externa bibliotek/guava-18.0.jar"/>
+	<classpathentry kind="lib" path="/Users/Wycheproof/Dropbox/Programmering/!Externa bibliotek/commons-cli-1.2/commons-cli-1.2-javadoc.jar"/>
+	<classpathentry kind="lib" path="/Users/Wycheproof/Dropbox/Programmering/!Externa bibliotek/commons-cli-1.2/commons-cli-1.2-sources.jar"/>
+	<classpathentry kind="lib" path="/Users/Wycheproof/Dropbox/Programmering/!Externa bibliotek/commons-cli-1.2/commons-cli-1.2.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

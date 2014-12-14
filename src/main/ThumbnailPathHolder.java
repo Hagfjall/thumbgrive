@@ -17,7 +17,7 @@ public class ThumbnailPathHolder {
 		notifyAll();
 	}
 
-	public synchronized void setAllLoaded() {
+	public synchronized void setAllThumbnailLinksRetrieved() {
 		allLoaded = true;
 		notifyAll();
 		System.out.println("all loaded = true");
