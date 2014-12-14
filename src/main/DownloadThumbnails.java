@@ -88,6 +88,7 @@ public class DownloadThumbnails extends Thread {
 		StringBuilder sb = new StringBuilder();
 		for (ThumbnailPath thumbnailPath : failedDownloads) {
 			sb.append(thumbnailPath);
+			sb.append(System.lineSeparator());
 		}
 		if (failedDownloads.size() > 0) {
 			LOGGER.warning("Could not download these " + failedDownloads.size()
