@@ -19,7 +19,7 @@ import java.util.logging.SimpleFormatter;
  *  -s NUMBER = size of the thumbnail, should not be bigger than //TODO check googles api
  */
 
-public class Thumbdrive {
+public class Thumbgrive {
 
 	public static void main(String[] args) throws IOException {
 		// get the top Logger:
