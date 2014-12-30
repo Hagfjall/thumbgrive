@@ -31,24 +31,29 @@ import org.apache.commons.cli.ParseException;
  */
 
 public class Thumbgrive {
+	private static boolean forceRedownload;
 
-	public static void main(String[] args1) {
-		String args[] = { "600", "cr2", "-help", "-f" };
+	public boolean getForceRedownload() {
+		return forceRedownload;
+	}
+
+	public static void main(String[] args) {
+		String[] fileTypes;
+		// String args[] = { "600", "cr2","-q", "a very long line" ,"-f"};
 
 		CommandLineParser parser = new BasicParser();
 		Options options = new Options();
 		options.addOption("help", false, "print this message");
-
-		Option forceReload = new Option("f", "force-redownload", false,
+		Option forceReloadOption = new Option("f", "force-redownload", false,
 				"download even if file exists locally");
-		Option searchQ = OptionBuilder
-				.withArgName("q")
-				.hasArg()
-				.withDescription(
-						"defines what search-query to use, see google drive API page for more information")
-				.create("searchQ");
-		options.addOption(forceReload);
-		options.addOption(searchQ);
+		Option searchQOption = new Option(
+				"q",
+				"defines what filetypes to retrieve thumbnails for"
+						+ "will use default (all images) if nothing i specified");
+		searchQOption.setArgs(Option.UNLIMITED_VALUES);
+
+		options.addOption(forceReloadOption);
+		options.addOption(searchQOption);
 		try {
 			CommandLine line = parser.parse(options, args);
 			if (line.hasOption("help")) {
@@ -56,8 +61,19 @@ public class Thumbgrive {
 				formatter.printHelp("Thumbgrive", options);
 				return;
 			}
-			if (line.hasOption("f")) {
-				System.out.println("force");
+			forceRedownload = line.hasOption("f");
+			if (line.hasOption("q")) {
+				fileTypes = line.getOptionValues("q");
+				System.out.println("q-args:");
+				int i = 1;
+				for (String s : fileTypes) {
+					System.out.println(i++ + " " + s);
+				}
+				i = 1;
+				System.out.println(" ");
+			} else {
+				fileTypes = new String[1];
+				fileTypes[0] = "images";
 			}
 		} catch (ParseException e) {
 			// TODO Auto-generated catch block
