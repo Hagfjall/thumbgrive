@@ -46,39 +46,18 @@ public class DownloadThumbnails extends Thread {
 					folders.mkdirs();
 				}
 				File file = new File(path);
-				long localFileSize, serverFileSize;
-				if (file.exists() && file.length() > 0) {
-					localFileSize = file.length();
-					serverFileSize = conn.getContentLengthLong();
-					if (localFileSize != serverFileSize) {
-						if (!Utils.FORCE_RELOAD_PREF) {
-							LOGGER.warning("'"
-									+ file
-									+ "' already exists but the size differs, local copy: "
-									+ localFileSize + " server copy: "
-									+ serverFileSize + ", will not download");
-						}
-					}
-					/*
-					 * check if the --force-reload flag or similar is activated
-					 * and then rewrite the file
-					 */
-					// TODO implement
-					else {
-						LOGGER.info("'" + file + "' already downloaded");
-					}
-				}
-				if (file.length() == 0) {
+				if (Utils.FORCE_RELOAD_PREF) {
 					file.delete();
 				}
-				FileOutputStream fos = new FileOutputStream(path);
-				ReadableByteChannel rbc = Channels.newChannel(conn
-						.getInputStream());
-				fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
-				LOGGER.info("'" + path + "' downloaded");
-				fos.close();
-				rbc.close();
-				succeededDownloads.add(thumbnailPath);
+				if (!file.exists()) {
+					FileOutputStream fos = new FileOutputStream(path);
+					ReadableByteChannel rbc = Channels.newChannel(conn
+							.getInputStream());
+					fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+					LOGGER.info("'" + path + "' downloaded");
+					fos.close();
+					succeededDownloads.add(thumbnailPath);
+				}
 			} catch (IOException e) {
 				LOGGER.warning("Could not download " + path);
 				failedDownloads.add(thumbnailPath);

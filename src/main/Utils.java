@@ -14,6 +14,7 @@ public class Utils {
 	public static String CURRENT_STATE_FILE_NAME = ".hashmapRetrievedLinks";
 	public static int THUMBNAIL_SIZE_PREF;
 	public static boolean FORCE_RELOAD_PREF = false;
+	public static String[] RETRIEVE_THUMBNAILS_FOR_THIS_FILETYPES;
 
 	private static boolean differsInPreferredAndStoredLink = true;
 	private final static Logger LOGGER = Logger
@@ -45,21 +46,19 @@ public class Utils {
 	}
 
 	public static String changeSizeOfThumbnailToPref(String thumbnailLink) {
-		if (differsInPreferredAndStoredLink) {
-			if (thumbnailLink != null) {
-				if (thumbnailLink.contains("=s")) {
+		if (thumbnailLink != null) {
+			if (thumbnailLink.contains("=s")) {
+				if (differsInPreferredAndStoredLink) {
 					int sizePos = thumbnailLink.indexOf("=s") + 2;
 					int linkThumbnailSize = Integer.parseInt(thumbnailLink
 							.substring(sizePos));
-					// TODO this is checked every time, only need to be checked
-					// once
 					if (linkThumbnailSize == THUMBNAIL_SIZE_PREF)
 						differsInPreferredAndStoredLink = false;
 					thumbnailLink = thumbnailLink.substring(0, sizePos)
 							+ THUMBNAIL_SIZE_PREF;
-				} else {
-					thumbnailLink = thumbnailLink + "=s" + THUMBNAIL_SIZE_PREF;
 				}
+			} else {
+				thumbnailLink = thumbnailLink + "=s" + THUMBNAIL_SIZE_PREF;
 			}
 		}
 		return thumbnailLink;

@@ -33,11 +33,11 @@ public class RetrieveThumbnailsLinks {
 	private ThumbnailPathHolder thumbnailPathHolder;
 
 	public RetrieveThumbnailsLinks(ThumbnailPathHolder thumbnailPathHolder,
-			int thumbnailSize, String... filetypes) {
+			int thumbnailSize) {
 		LOGGER.setLevel(Level.ALL);
 		this.thumbnailPathHolder = thumbnailPathHolder;
 		Utils.THUMBNAIL_SIZE_PREF = thumbnailSize;
-		this.filetypes = filetypes;
+		this.filetypes = Utils.RETRIEVE_THUMBNAILS_FOR_THIS_FILETYPES;
 		idToThumbnails = new HashMap<String, ThumbnailPath>();
 		idToTitle = new HashMap<String, String>();
 		idToParent = new HashMap<String, String>();
@@ -138,7 +138,8 @@ public class RetrieveThumbnailsLinks {
 			ThumbnailPath temp = new ThumbnailPath(filePath.toString(),
 					thumbnailLink);
 			if (idToThumbnails.put(file.getId(), temp) == null) {
-				// no need to download a file twice...
+				// no need to download a file twice..., could be if the -q
+				// options get several hits on the same file
 				thumbnailPathHolder.insert(temp);
 			}
 		}
@@ -150,7 +151,7 @@ public class RetrieveThumbnailsLinks {
 		LinkedList<String> path = new LinkedList<String>();
 		String currentFileId = fileId;
 		for (int depth = 0; depth < 30; depth++) {
-			String parentFileId = getParentId( currentFileId);
+			String parentFileId = getParentId(currentFileId);
 			if (parentFileId == null) {
 				LOGGER.finest("'" + getTitleOfId(currentFileId)
 						+ "' gets null for it parent;");

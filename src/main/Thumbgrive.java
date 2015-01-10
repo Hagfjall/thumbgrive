@@ -31,14 +31,8 @@ import org.apache.commons.cli.ParseException;
  */
 
 public class Thumbgrive {
-	private static boolean forceRedownload;
-
-	public boolean getForceRedownload() {
-		return forceRedownload;
-	}
 
 	public static void main(String[] args) {
-		String[] fileTypes;
 		// String args[] = { "600", "cr2","-q", "a very long line" ,"-f"};
 
 		CommandLineParser parser = new BasicParser();
@@ -50,10 +44,14 @@ public class Thumbgrive {
 				"q",
 				"defines what filetypes to retrieve thumbnails for"
 						+ "will use default (all images) if nothing i specified");
+		Option sizeOption = new Option("s",
+				"sets the thumbnail size, default = 600");
+		sizeOption.setArgs(1);
 		searchQOption.setArgs(Option.UNLIMITED_VALUES);
 
 		options.addOption(forceReloadOption);
 		options.addOption(searchQOption);
+		options.addOption(sizeOption);
 		try {
 			CommandLine line = parser.parse(options, args);
 			if (line.hasOption("help")) {
@@ -61,19 +59,26 @@ public class Thumbgrive {
 				formatter.printHelp("Thumbgrive", options);
 				return;
 			}
-			forceRedownload = line.hasOption("f");
+			Utils.FORCE_RELOAD_PREF = line.hasOption("f");
 			if (line.hasOption("q")) {
-				fileTypes = line.getOptionValues("q");
+				Utils.RETRIEVE_THUMBNAILS_FOR_THIS_FILETYPES = line
+						.getOptionValues("q");
 				System.out.println("q-args:");
 				int i = 1;
-				for (String s : fileTypes) {
+				for (String s : Utils.RETRIEVE_THUMBNAILS_FOR_THIS_FILETYPES) {
 					System.out.println(i++ + " " + s);
 				}
 				i = 1;
 				System.out.println(" ");
 			} else {
-				fileTypes = new String[1];
-				fileTypes[0] = "images";
+				Utils.RETRIEVE_THUMBNAILS_FOR_THIS_FILETYPES = new String[1];
+				Utils.RETRIEVE_THUMBNAILS_FOR_THIS_FILETYPES[0] = "images";
+			}
+			if (line.hasOption("s")) {
+				// TODO really check that this method returns 600 if the user
+				// havn't set any -s flag, hate coding offline...
+				Utils.THUMBNAIL_SIZE_PREF = Integer.parseInt(line
+						.getOptionValue("s", "600"));
 			}
 		} catch (ParseException e) {
 			// TODO Auto-generated catch block
@@ -82,13 +87,12 @@ public class Thumbgrive {
 
 		setLogger(false, java.util.logging.Level.ALL);
 
-		// TODO read all arguments
 		ThumbnailPathHolder thumbnailPathHolder = new ThumbnailPathHolder();
 		DownloadThumbnails downloadThumbnail = new DownloadThumbnails(
 				thumbnailPathHolder);
 		downloadThumbnail.start();
 		RetrieveThumbnailsLinks retrieveThumbnailsLinks = new RetrieveThumbnailsLinks(
-				thumbnailPathHolder, Integer.parseInt(args[0]), args[1]);
+				thumbnailPathHolder, Integer.parseInt(args[0]));
 		retrieveThumbnailsLinks.run();
 		thumbnailPathHolder.setAllThumbnailLinksRetrieved();
 	}
