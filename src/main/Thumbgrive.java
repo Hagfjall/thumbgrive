@@ -12,7 +12,6 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
-import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
@@ -46,30 +45,25 @@ public class Thumbgrive {
 						+ "will use default (all images) if nothing i specified");
 		Option sizeOption = new Option("s",
 				"sets the thumbnail size, default = 600");
+		Option logToFileOption = new Option("log", false,
+				"Save the log to log.txt");
 		sizeOption.setArgs(1);
 		searchQOption.setArgs(Option.UNLIMITED_VALUES);
 
 		options.addOption(forceReloadOption);
 		options.addOption(searchQOption);
 		options.addOption(sizeOption);
+		options.addOption(logToFileOption);
 		try {
 			CommandLine line = parser.parse(options, args);
 			if (line.hasOption("help")) {
-				HelpFormatter formatter = new HelpFormatter();
-				formatter.printHelp("Thumbgrive", options);
+				new HelpFormatter().printHelp("Thumbgrive", options);
 				return;
 			}
 			Utils.FORCE_RELOAD_PREF = line.hasOption("f");
 			if (line.hasOption("q")) {
 				Utils.RETRIEVE_THUMBNAILS_FOR_THIS_FILETYPES = line
 						.getOptionValues("q");
-				System.out.println("q-args:");
-				int i = 1;
-				for (String s : Utils.RETRIEVE_THUMBNAILS_FOR_THIS_FILETYPES) {
-					System.out.println(i++ + " " + s);
-				}
-				i = 1;
-				System.out.println(" ");
 			} else {
 				Utils.RETRIEVE_THUMBNAILS_FOR_THIS_FILETYPES = new String[1];
 				Utils.RETRIEVE_THUMBNAILS_FOR_THIS_FILETYPES[0] = "images";
@@ -80,19 +74,19 @@ public class Thumbgrive {
 				Utils.THUMBNAIL_SIZE_PREF = Integer.parseInt(line
 						.getOptionValue("s", "600"));
 			}
+			setLogger(line.hasOption("log"), java.util.logging.Level.ALL);
 		} catch (ParseException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			java.util.logging.Logger.getLogger("").warning("Wrong arguments!");
+			new HelpFormatter().printHelp("Thumbgrive", options);
+			return;
+
 		}
 
-		setLogger(false, java.util.logging.Level.ALL);
-
 		ThumbnailPathHolder thumbnailPathHolder = new ThumbnailPathHolder();
-		DownloadThumbnails downloadThumbnail = new DownloadThumbnails(
-				thumbnailPathHolder);
-		downloadThumbnail.start();
+		new DownloadThumbnails(thumbnailPathHolder).start();
 		RetrieveThumbnailsLinks retrieveThumbnailsLinks = new RetrieveThumbnailsLinks(
-				thumbnailPathHolder, Integer.parseInt(args[0]));
+				thumbnailPathHolder, Utils.THUMBNAIL_SIZE_PREF);
 		retrieveThumbnailsLinks.run();
 		thumbnailPathHolder.setAllThumbnailLinksRetrieved();
 	}
